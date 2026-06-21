@@ -1,0 +1,210 @@
+// This is your Prisma schema file
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════
+// 1. المستخدمون (المشرفون)
+// ═══════════════════════════════════════
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// 2. البطولات
+// ═══════════════════════════════════════
+model Tournament {
+  id              String           @id @default(cuid())
+  name            String
+  type            String           @default("group_stage") // knockout | group_stage
+  status          String           @default("upcoming")    // upcoming | active | completed
+  groupCount      Int              @default(1)
+  qualifyingTeams Int              @default(2)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  teams   TournamentTeam[]
+  matches Match[]
+}
+
+// ═══════════════════════════════════════
+// 3. الفرق
+// ═══════════════════════════════════════
+model Team {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players     Player[]
+  tournaments TournamentTeam[]
+  homeMatches Match[]          @relation("HomeTeam")
+  awayMatches Match[]          @relation("AwayTeam")
+  goals       Goal[]
+  cards       Card[]
+}
+
+// ═══════════════════════════════════════
+// 4. ربط الفرق بالبطولات
+// ═══════════════════════════════════════
+model TournamentTeam {
+  id           String @id @default(cuid())
+  tournamentId String
+  teamId       String
+  groupName    String? // A | B | C ...
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+}
+
+// ═══════════════════════════════════════
+// 5. اللاعبون
+// ═══════════════════════════════════════
+model Player {
+  id           String   @id @default(cuid())
+  name         String
+  jerseyNumber Int
+  teamId       String
+  position     String?  // goalkeeper | defender | midfielder | forward
+  photoUrl     String?
+  goalsCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  team  Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  goals Goal[]
+  cards Card[]
+
+  @@unique([teamId, jerseyNumber])
+}
+
+// ═══════════════════════════════════════
+// 6. المباريات
+// ═══════════════════════════════════════
+model Match {
+  id           String    @id @default(cuid())
+  tournamentId String
+  homeTeamId   String
+  awayTeamId   String
+  homeScore    Int?
+  awayScore    Int?
+  homePenalty  Int?
+  awayPenalty  Int?
+  status       String    @default("scheduled") // scheduled | live | finished | cancelled
+  stage        String    @default("group")     // group | round_16 | quarter | semi | final
+  groupName    String?
+  venue        String?
+  matchDate    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  homeTeam   Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  goals      Goal[]
+  cards      Card[]
+}
+
+// ═══════════════════════════════════════
+// 7. الأهداف
+// ═══════════════════════════════════════
+model Goal {
+  id          String   @id @default(cuid())
+  matchId     String
+  playerId    String
+  teamId      String
+  type        String   @default("normal") // normal | penalty | own_goal | free_kick
+  minute      Int
+  videoUrl    String?
+  isNominated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  match  Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player     @relation(fields: [playerId], references: [id])
+  team   Team       @relation(fields: [teamId], references: [id])
+  votes  GoalVote[]
+}
+
+// ═══════════════════════════════════════
+// 8. البطاقات (الإنذارات والطرد)
+// ═══════════════════════════════════════
+model Card {
+  id        String   @id @default(cuid())
+  matchId   String
+  playerId  String
+  teamId    String
+  type      String   // yellow | red | second_yellow
+  minute    Int
+  createdAt DateTime @default(now())
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+}
+
+// ═══════════════════════════════════════
+// 9. أصوات هدف الجولة
+// ═══════════════════════════════════════
+model GoalVote {
+  id          String   @id @default(cuid())
+  goalId      String
+  visitorIp   String
+  fingerprint String
+  votedAt     DateTime @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, fingerprint])
+}
+
+// ═══════════════════════════════════════
+// 10. الرعاة
+// ═══════════════════════════════════════
+model Sponsor {
+  id           String   @id @default(cuid())
+  name         String
+  logoUrl      String
+  websiteUrl   String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════
+// 11. الإعدادات العامة
+// ═══════════════════════════════════════
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════
+// 12. المحتوى النصي
+// ═══════════════════════════════════════
+model Content {
+  id        String   @id @default(cuid())
+  section   String   @unique // hero | about | vision
+  title     String
+  body      String   @db.Text
+  imageUrl  String?
+  updatedAt DateTime @updatedAt
+}
