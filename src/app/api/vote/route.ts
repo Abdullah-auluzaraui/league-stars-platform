@@ -26,7 +26,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { goalId, fingerprint } = result.data;
+  const { goalId, fingerprint, token } = result.data;
+
+  // ─── التحقق من رمز Turnstile البشري ───
+  try {
+    const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    const verifyResponse = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${token}&remoteip=${visitorIp}`,
+    });
+
+    const verifyResult = await verifyResponse.json();
+    if (!verifyResult.success) {
+      return NextResponse.json({ error: 'فشل التحقق من الهوية البشرية، يرجى المحاولة مجدداً' }, { status: 400 });
+    }
+  } catch (error) {
+    console.error('Turnstile verification error:', error);
+    return NextResponse.json({ error: 'فشل الاتصال بخادم التحقق من الهوية البشرية' }, { status: 500 });
+  }
 
   // التحقق من تفرد التصويت
   const existing = await prisma.goalVote.findUnique({

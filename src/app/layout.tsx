@@ -1,5 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProvider } from '@/core/providers/auth-provider';
+import { EditModeProvider } from '@/core/providers/edit-mode-provider';
+import { ThemeProvider } from '@/core/providers/theme-provider';
+import Navbar from '@/core/layouts/Navbar';
+import Footer from '@/core/layouts/Footer';
+import { prisma } from '@/core/lib/prisma';
 
 export const metadata: Metadata = {
   title: 'نجوم الدوري — تابع مباريات بطولتك المفضلة',
@@ -14,11 +20,35 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+// ─── جلب الألوان من قاعدة البيانات (Server Component) ────────────────────────
+async function getThemeColors() {
+  try {
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: ['color_primary', 'color_accent', 'color_background'] } },
+    });
+    const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+    return {
+      primary: map['color_primary'] || '#750722',
+      accent: map['color_accent'] || '#C92142',
+      background: map['color_background'] || '#f8f9fa',
+    };
+  } catch {
+    // في حالة تعذّر الاتصال بقاعدة البيانات تُستخدم الألوان الافتراضية
+    return {
+      primary: '#750722',
+      accent: '#C92142',
+      background: '#f8f9fa',
+    };
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const themeColors = await getThemeColors();
+
   return (
     <html lang="ar" dir="rtl">
       <head>
@@ -30,7 +60,19 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <ThemeProvider initialColors={themeColors}>
+          <AuthProvider>
+            <EditModeProvider>
+              <div className="page-wrapper">
+                <Navbar />
+                <main className="page-content">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+            </EditModeProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -17,21 +17,62 @@ export async function submitVote(formData: FormData) {
   const result = validateAction(submitVoteSchema, {
     goalId: formData.get('goalId'),
     fingerprint: formData.get('fingerprint'),
+    token: formData.get('token'),
   });
 
   if (!result.success) {
     return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
   }
 
-  const { goalId, fingerprint } = result.data;
+  const { goalId, fingerprint, token } = result.data;
 
-  // التحقق من تفرد التصويت (بصمة + هدف)
-  const existing = await prisma.goalVote.findUnique({
-    where: { goalId_fingerprint: { goalId, fingerprint } },
+  // ─── التحقق من رمز Turnstile البشري ───
+  try {
+    const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    const verifyResponse = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${token}&remoteip=${visitorIp}`,
+    });
+
+    const verifyResult = await verifyResponse.json();
+    if (!verifyResult.success) {
+      return { error: 'فشل التحقق من الهوية البشرية، يرجى المحاولة مجدداً' };
+    }
+  } catch (error) {
+    console.error('Turnstile verification error:', error);
+    return { error: 'فشل الاتصال بخادم التحقق من الهوية البشرية' };
+  }
+
+  // 1. جلب الهدف المراد التصويت له للتأكد من أنه مرشح حالياً
+  const targetGoal = await prisma.goal.findUnique({
+    where: { id: goalId },
+    select: { id: true, isNominated: true, match: { select: { tournamentId: true } } },
   });
 
-  if (existing) {
-    return { error: 'لقد صوّت جهازك لهذا الهدف مسبقاً' };
+  if (!targetGoal || !targetGoal.isNominated) {
+    return { error: 'هذا الهدف غير مدرج في التصويت الحالي' };
+  }
+
+  const tournamentId = targetGoal.match.tournamentId;
+
+  // 2. التحقق مما إذا كان المستخدم قد صوّت لأي هدف مرشح حالياً في هذه البطولة مسبقاً
+  const nominatedGoals = await prisma.goal.findMany({
+    where: { isNominated: true, match: { tournamentId } },
+    select: { id: true },
+  });
+
+  const nominatedGoalIds = nominatedGoals.map((g) => g.id);
+
+  const existingVote = await prisma.goalVote.findFirst({
+    where: {
+      fingerprint,
+      goalId: { in: nominatedGoalIds },
+    },
+  });
+
+  if (existingVote) {
+    return { error: 'لقد شاركت في تصويت هذه الجولة مسبقاً' };
   }
 
   try {
@@ -105,5 +146,28 @@ export async function nominateGoal(goalId: string, nominated: boolean) {
     return { success: true };
   } catch {
     return { error: 'حدث خطأ أثناء ترشيح الهدف' };
+  }
+}
+
+// ── التحقق من تصويت المستخدم ──
+export async function checkUserVote(fingerprint: string, tournamentId: string) {
+  try {
+    const nominatedGoals = await prisma.goal.findMany({
+      where: { isNominated: true, match: { tournamentId } },
+      select: { id: true },
+    });
+    const nominatedGoalIds = nominatedGoals.map((g) => g.id);
+
+    const vote = await prisma.goalVote.findFirst({
+      where: {
+        fingerprint,
+        goalId: { in: nominatedGoalIds },
+      },
+      select: { goalId: true },
+    });
+
+    return vote ? vote.goalId : null;
+  } catch {
+    return null;
   }
 }

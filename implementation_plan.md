@@ -161,6 +161,7 @@ erDiagram
         Int qualifyingTeams
         DateTime startDate
         DateTime endDate
+        DateTime archivedAt "nullable"
     }
 
     Team {
@@ -660,6 +661,7 @@ const matches = await prisma.match.findMany({ ... });
 *   إنشاء بطولة بنوعها (خروج مغلوب / مجموعات + خروج مغلوب).
 *   تحديد التواريخ وعدد المجموعات والفرق المتأهلة.
 *   ربط الفرق المشاركة ديناميكياً.
+*   **إنهاء وأرشفة البطولة:** إتاحة خيار "إنهاء البطولة" للمشرف، والذي يغير حالة البطولة إلى `completed` ويسجل تاريخ الأرشفة في `archivedAt` للحفاظ على سجلها التاريخي وعرضه مستقبلاً في معرض البطولات.
 
 ## 6.2 إدارة الفرق واللاعبين
 *   CRUD للفرق مع رفع الشعار إلى Cloudinary.
@@ -720,7 +722,7 @@ const matches = await prisma.match.findMany({ ... });
 - [ ] إنشاء `src/core/lib/errors.ts` (ApiError, handleActionError)
 - [ ] كتابة `schema.prisma` بالجداول:
     - [ ] `User` (المشرفين)
-    - [ ] `Tournament`
+    - [ ] `Tournament` (مع إضافة حقل `archivedAt` للأرشفة والإنهاء)
     - [ ] `Team`
     - [ ] `Player` (مع ربطه بالفريق + `@@unique([teamId, jerseyNumber])`)
     - [ ] `Match` (النتائج + الترجيح + الحالة)
@@ -748,6 +750,8 @@ const matches = await prisma.match.findMany({ ... });
     - [ ] `features/players/schemas.ts` → `createPlayerSchema`
     - [ ] `features/voting/schemas.ts` → `submitVoteSchema`
     - [ ] `features/settings/schemas.ts` → `updateSettingsSchema`
+    - [ ] `features/tournaments/schemas.ts` → `createTournamentSchema`, `updateTournamentSchema`
+- [ ] تطوير Server Actions للبطولات (إنشاء، تعديل، إنهاء وأرشفة البطولة `archiveTournament`)
 - [ ] تطوير Server Actions مع `revalidatePath` / `revalidateTag`
 - [ ] ربط Cloudinary لرفع الشعارات والوسائط
 - [ ] تطوير Server Actions لإدارة اللاعبين + فحص تفرد رقم القميص

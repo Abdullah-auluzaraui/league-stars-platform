@@ -79,7 +79,7 @@ model TournamentTeam {
 model Player {
   id           String   @id @default(cuid())
   name         String
-  jerseyNumber Int
+  jerseyNumber Int?
   teamId       String
   position     String?  // goalkeeper | defender | midfielder | forward
   photoUrl     String?

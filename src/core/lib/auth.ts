@@ -2,6 +2,9 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import { ActionError } from './validation';
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is missing in production!');
+}
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'fallback-secret-change-in-production'
 );

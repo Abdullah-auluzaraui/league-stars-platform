@@ -48,8 +48,12 @@ export async function logout() {
 
 // ── التحقق من الجلسة (للـ Client Components) ──
 export async function getSession() {
-  const { verifyAdmin } = await import('@/core/lib/auth');
-  const payload = await verifyAdmin();
-  if (!payload) return null;
-  return { userId: payload.userId as string, role: payload.role as string };
+  try {
+    const { verifyAdmin } = await import('@/core/lib/auth');
+    const payload = await verifyAdmin();
+    if (!payload) return null;
+    return { userId: payload.userId as string, role: payload.role as string };
+  } catch {
+    return null;
+  }
 }

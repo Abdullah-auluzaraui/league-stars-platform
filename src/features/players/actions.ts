@@ -106,20 +106,39 @@ export async function getTopScorers(limit = 20) {
       team: { select: { id: true, name: true, logoUrl: true } },
       goals: {
         where: { type: { not: 'own_goal' } }, // لا نحسب الأهداف العكسية
-        select: { id: true },
+        select: { id: true, type: true },
       },
     },
-    orderBy: { goals: { _count: 'desc' } },
-    take: limit,
   });
 
   return players
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      jerseyNumber: p.jerseyNumber,
-      team: p.team,
-      goalsCount: p.goals.length,
-    }))
-    .filter((p) => p.goalsCount > 0);
+    .map((p) => {
+      const goalsCount = p.goals.length;
+      const penaltyGoalsCount = p.goals.filter((g) => g.type === 'penalty').length;
+      const openPlayGoalsCount = goalsCount - penaltyGoalsCount;
+
+      return {
+        id: p.id,
+        name: p.name,
+        jerseyNumber: p.jerseyNumber,
+        position: p.position,
+        team: p.team,
+        goalsCount,
+        openPlayGoalsCount,
+      };
+    })
+    .filter((p) => p.goalsCount > 0)
+    .sort((a, b) => {
+      // 1. الفرز الأساسي: عدد الأهداف الإجمالي (تنازلي)
+      if (b.goalsCount !== a.goalsCount) {
+        return b.goalsCount - a.goalsCount;
+      }
+      // 2. كسر التعادل: عدد أهداف اللعب المفتوح (تنازلي)
+      if (b.openPlayGoalsCount !== a.openPlayGoalsCount) {
+        return b.openPlayGoalsCount - a.openPlayGoalsCount;
+      }
+      // 3. كسر التعادل النهائي: الترتيب الأبجدي
+      return a.name.localeCompare(b.name, 'ar');
+    })
+    .slice(0, limit);
 }
