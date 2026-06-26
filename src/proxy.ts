@@ -15,6 +15,17 @@ const PUBLIC_PATHS = [
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // توجيه المشرف المسجل دخوله بعيداً عن صفحة تسجيل الدخول
+  if (pathname === '/login') {
+    const token = request.cookies.get('adminToken')?.value;
+    if (token) {
+      const payload = await verifyToken(token);
+      if (payload && payload.role === 'admin') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+    }
+  }
+
   // تخطي المسارات العامة
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();

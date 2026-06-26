@@ -80,7 +80,7 @@ export async function submitVote(formData: FormData) {
       data: { goalId, fingerprint, visitorIp },
     });
 
-    revalidateTag('votes', 'everyone');
+    revalidateTag('votes');
     return { success: true };
   } catch {
     return { error: 'حدث خطأ أثناء تسجيل التصويت' };
@@ -133,19 +133,19 @@ export async function getNominatedGoals(tournamentId: string) {
 
 // ── ترشيح هدف لهدف الجولة ──
 export async function nominateGoal(goalId: string, nominated: boolean) {
-  const { verifyAdmin } = await import('@/core/lib/auth');
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    const { verifyAdmin } = await import('@/core/lib/auth');
+    await verifyAdmin();
+
     await prisma.goal.update({
       where: { id: goalId },
       data: { isNominated: nominated },
     });
-    revalidateTag('votes', 'everyone');
+    revalidateTag('votes');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء ترشيح الهدف' };
+  } catch (error) {
+    const { handleActionError } = await import('@/core/lib/validation');
+    return handleActionError(error);
   }
 }
 

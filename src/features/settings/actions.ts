@@ -3,7 +3,7 @@
 import { revalidateTag } from 'next/cache';
 import { prisma } from '@/core/lib/prisma';
 import { verifyAdmin } from '@/core/lib/auth';
-import { validateAction } from '@/core/lib/validation';
+import { validateAction, handleActionError } from '@/core/lib/validation';
 import { updateSettingSchema, updateHeroSchema, updateSponsorSchema } from './schemas';
 
 // ── جلب جميع الإعدادات ──
@@ -20,47 +20,45 @@ export async function getSetting(key: string): Promise<string | null> {
 
 // ── تحديث إعداد ──
 export async function updateSetting(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(updateSettingSchema, {
-    key: formData.get('key'),
-    value: formData.get('value'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(updateSettingSchema, {
+      key: formData.get('key'),
+      value: formData.get('value'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     await prisma.setting.upsert({
       where: { key: result.data.key },
       update: { value: result.data.value },
       create: { key: result.data.key, value: result.data.value },
     });
-    revalidateTag('settings', 'everyone');
+    revalidateTag('settings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حفظ الإعداد' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── تحديث هيرو الصفحة الرئيسية ──
 export async function updateHero(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(updateHeroSchema, {
-    title: formData.get('title'),
-    body: formData.get('body'),
-    imageUrl: formData.get('imageUrl'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(updateHeroSchema, {
+      title: formData.get('title'),
+      body: formData.get('body'),
+      imageUrl: formData.get('imageUrl'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     const updates: Array<Promise<unknown>> = [];
 
     if (result.data.title !== undefined) {
@@ -94,32 +92,31 @@ export async function updateHero(formData: FormData) {
     }
 
     await Promise.all(updates);
-    revalidateTag('settings', 'everyone');
+    revalidateTag('settings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء تحديث الهيرو' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── إدارة الرعاة ──
 export async function upsertSponsor(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(updateSponsorSchema, {
-    sponsorId: formData.get('sponsorId'),
-    name: formData.get('name'),
-    logoUrl: formData.get('logoUrl'),
-    websiteUrl: formData.get('websiteUrl'),
-    displayOrder: formData.get('displayOrder'),
-    isActive: formData.get('isActive') === 'true',
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(updateSponsorSchema, {
+      sponsorId: formData.get('sponsorId'),
+      name: formData.get('name'),
+      logoUrl: formData.get('logoUrl'),
+      websiteUrl: formData.get('websiteUrl'),
+      displayOrder: formData.get('displayOrder'),
+      isActive: formData.get('isActive') === 'true',
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     if (result.data.sponsorId) {
       await prisma.sponsor.update({
         where: { id: result.data.sponsorId },
@@ -143,23 +140,21 @@ export async function upsertSponsor(formData: FormData) {
       });
     }
 
-    revalidateTag('sponsors', 'everyone');
+    revalidateTag('sponsors');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حفظ الراعي' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 export async function deleteSponsor(sponsorId: string) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    await verifyAdmin();
     await prisma.sponsor.delete({ where: { id: sponsorId } });
-    revalidateTag('sponsors', 'everyone');
+    revalidateTag('sponsors');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حذف الراعي' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 

@@ -3,7 +3,7 @@
 import { revalidateTag } from 'next/cache';
 import { prisma } from '@/core/lib/prisma';
 import { verifyAdmin } from '@/core/lib/auth';
-import { validateAction } from '@/core/lib/validation';
+import { validateAction, handleActionError } from '@/core/lib/validation';
 import {
   createMatchSchema,
   updateScoreSchema,
@@ -13,24 +13,23 @@ import {
 
 // ── إنشاء مباراة ──
 export async function createMatch(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(createMatchSchema, {
-    tournamentId: formData.get('tournamentId'),
-    homeTeamId: formData.get('homeTeamId'),
-    awayTeamId: formData.get('awayTeamId'),
-    matchDate: formData.get('matchDate'),
-    venue: formData.get('venue'),
-    stage: formData.get('stage'),
-    groupName: formData.get('groupName'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(createMatchSchema, {
+      tournamentId: formData.get('tournamentId'),
+      homeTeamId: formData.get('homeTeamId'),
+      awayTeamId: formData.get('awayTeamId'),
+      matchDate: formData.get('matchDate'),
+      venue: formData.get('venue'),
+      stage: formData.get('stage'),
+      groupName: formData.get('groupName'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     const match = await prisma.match.create({
       data: {
         tournamentId: result.data.tournamentId,
@@ -46,33 +45,32 @@ export async function createMatch(formData: FormData) {
       },
     });
 
-    revalidateTag('matches', 'everyone');
-    revalidateTag('standings', 'everyone');
+    revalidateTag('matches');
+    revalidateTag('standings');
     return { success: true, matchId: match.id };
-  } catch {
-    return { error: 'حدث خطأ أثناء إنشاء المباراة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── تحديث النتيجة ──
 export async function updateScore(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(updateScoreSchema, {
-    matchId: formData.get('matchId'),
-    homeScore: formData.get('homeScore'),
-    awayScore: formData.get('awayScore'),
-    homePenalty: formData.get('homePenalty'),
-    awayPenalty: formData.get('awayPenalty'),
-    status: formData.get('status'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(updateScoreSchema, {
+      matchId: formData.get('matchId'),
+      homeScore: formData.get('homeScore'),
+      awayScore: formData.get('awayScore'),
+      homePenalty: formData.get('homePenalty'),
+      awayPenalty: formData.get('awayPenalty'),
+      status: formData.get('status'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     await prisma.match.update({
       where: { id: result.data.matchId },
       data: {
@@ -84,11 +82,11 @@ export async function updateScore(formData: FormData) {
       },
     });
 
-    revalidateTag('matches', 'everyone');
-    revalidateTag('standings', 'everyone');
+    revalidateTag('matches');
+    revalidateTag('standings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء تحديث النتيجة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
@@ -97,61 +95,56 @@ export async function updateMatchStatus(
   matchId: string,
   status: 'scheduled' | 'live' | 'finished' | 'cancelled'
 ) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    await verifyAdmin();
     await prisma.match.update({
       where: { id: matchId },
       data: { status },
     });
-    revalidateTag('matches', 'everyone');
+    revalidateTag('matches');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء تحديث الحالة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── حذف مباراة ──
 export async function deleteMatch(matchId: string) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    await verifyAdmin();
     await prisma.match.delete({ where: { id: matchId } });
-    revalidateTag('matches', 'everyone');
-    revalidateTag('standings', 'everyone');
+    revalidateTag('matches');
+    revalidateTag('standings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حذف المباراة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── إضافة هدف ──
 export async function addGoal(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(addGoalSchema, {
-    matchId: formData.get('matchId'),
-    playerId: formData.get('playerId'),
-    teamId: formData.get('teamId'),
-    type: formData.get('type'),
-    minute: formData.get('minute'),
-    videoUrl: formData.get('videoUrl'),
-    isNominated: formData.get('isNominated') === 'true',
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(addGoalSchema, {
+      matchId: formData.get('matchId'),
+      playerId: formData.get('playerId'),
+      teamId: formData.get('teamId'),
+      type: formData.get('type'),
+      minute: formData.get('minute'),
+      videoUrl: formData.get('videoUrl'),
+      isNominated: formData.get('isNominated') === 'true',
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     // نحدث النتيجة تلقائياً بناءً على الفريق المسجّل
     const match = await prisma.match.findUnique({
       where: { id: result.data.matchId },
     });
-    if (!match) return { error: 'المباراة غير موجودة' };
+    if (!match) return { success: false, error: 'المباراة غير موجودة' };
 
     const goal = await prisma.goal.create({
       data: {
@@ -185,26 +178,25 @@ export async function addGoal(formData: FormData) {
       });
     }
 
-    revalidateTag('matches', 'everyone');
-    revalidateTag('standings', 'everyone');
-    revalidateTag('scorers', 'everyone');
+    revalidateTag('matches');
+    revalidateTag('standings');
+    revalidateTag('scorers');
     return { success: true, goalId: goal.id };
-  } catch {
-    return { error: 'حدث خطأ أثناء إضافة الهدف' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── حذف هدف ──
 export async function deleteGoal(goalId: string) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    await verifyAdmin();
+
     const goal = await prisma.goal.findUnique({
       where: { id: goalId },
       include: { match: true },
     });
-    if (!goal) return { error: 'الهدف غير موجود' };
+    if (!goal) return { success: false, error: 'الهدف غير موجود' };
 
     await prisma.goal.delete({ where: { id: goalId } });
 
@@ -228,38 +220,37 @@ export async function deleteGoal(goalId: string) {
       });
     }
 
-    revalidateTag('matches', 'everyone');
-    revalidateTag('standings', 'everyone');
-    revalidateTag('scorers', 'everyone');
+    revalidateTag('matches');
+    revalidateTag('standings');
+    revalidateTag('scorers');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حذف الهدف' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── إضافة بطاقة ──
 export async function addCard(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(addCardSchema, {
-    matchId: formData.get('matchId'),
-    playerId: formData.get('playerId'),
-    teamId: formData.get('teamId'),
-    type: formData.get('type'),
-    minute: formData.get('minute'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(addCardSchema, {
+      matchId: formData.get('matchId'),
+      playerId: formData.get('playerId'),
+      teamId: formData.get('teamId'),
+      type: formData.get('type'),
+      minute: formData.get('minute'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     await prisma.card.create({ data: result.data });
-    revalidateTag('standings', 'everyone');
+    revalidateTag('standings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء إضافة البطاقة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 

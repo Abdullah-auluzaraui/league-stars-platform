@@ -33,6 +33,7 @@ model Tournament {
   qualifyingTeams Int              @default(2)
   startDate       DateTime?
   endDate         DateTime?
+  archivedAt      DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 

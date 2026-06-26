@@ -28,6 +28,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     isAdmin: true,
-    user: { id: user.id, username: user.username, role: user.role },
+    user: { userId: user.id, username: user.username, role: user.role },
   });
 }

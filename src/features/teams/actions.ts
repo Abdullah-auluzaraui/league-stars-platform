@@ -3,26 +3,25 @@
 import { revalidateTag } from 'next/cache';
 import { prisma } from '@/core/lib/prisma';
 import { verifyAdmin } from '@/core/lib/auth';
-import { validateAction } from '@/core/lib/validation';
+import { validateAction, handleActionError } from '@/core/lib/validation';
 import { createTeamSchema, updateTeamSchema } from './schemas';
 
 // ── إنشاء فريق ──
 export async function createTeam(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(createTeamSchema, {
-    name: formData.get('name'),
-    logoUrl: formData.get('logoUrl'),
-    tournamentId: formData.get('tournamentId'),
-    groupName: formData.get('groupName'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(createTeamSchema, {
+      name: formData.get('name'),
+      logoUrl: formData.get('logoUrl'),
+      tournamentId: formData.get('tournamentId'),
+      groupName: formData.get('groupName'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     const team = await prisma.team.create({
       data: {
         name: result.data.name,
@@ -41,32 +40,31 @@ export async function createTeam(formData: FormData) {
       });
     }
 
-    revalidateTag('teams', 'everyone');
+    revalidateTag('teams');
     return { success: true, teamId: team.id };
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Unique constraint')) {
-      return { error: 'يوجد فريق بهذا الاسم مسبقاً' };
+      return { success: false, error: 'يوجد فريق بهذا الاسم مسبقاً', code: 'UNIQUE_CONSTRAINT' };
     }
-    return { error: 'حدث خطأ أثناء إنشاء الفريق' };
+    return handleActionError(e);
   }
 }
 
 // ── تحديث فريق ──
 export async function updateTeam(formData: FormData) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
-  const result = validateAction(updateTeamSchema, {
-    teamId: formData.get('teamId'),
-    name: formData.get('name'),
-    logoUrl: formData.get('logoUrl'),
-  });
-
-  if (!result.success) {
-    return { error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
-  }
-
   try {
+    await verifyAdmin();
+
+    const result = validateAction(updateTeamSchema, {
+      teamId: formData.get('teamId'),
+      name: formData.get('name'),
+      logoUrl: formData.get('logoUrl'),
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.errors[0]?.message ?? 'بيانات غير صحيحة' };
+    }
+
     await prisma.team.update({
       where: { id: result.data.teamId },
       data: {
@@ -75,25 +73,23 @@ export async function updateTeam(formData: FormData) {
       },
     });
 
-    revalidateTag('teams', 'everyone');
+    revalidateTag('teams');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء تحديث الفريق' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
 // ── حذف فريق ──
 export async function deleteTeam(teamId: string) {
-  const admin = await verifyAdmin();
-  if (!admin) return { error: 'غير مصرح' };
-
   try {
+    await verifyAdmin();
     await prisma.team.delete({ where: { id: teamId } });
-    revalidateTag('teams', 'everyone');
-    revalidateTag('standings', 'everyone');
+    revalidateTag('teams');
+    revalidateTag('standings');
     return { success: true };
-  } catch {
-    return { error: 'حدث خطأ أثناء حذف الفريق — قد يكون للفريق بيانات مرتبطة' };
+  } catch (error) {
+    return handleActionError(error);
   }
 }
 
