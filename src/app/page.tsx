@@ -198,8 +198,8 @@ export default async function HomePage() {
       ══════════════════════════════════════════════════════ */}
       <section className="relative pt-8 sm:pt-16 text-center flex flex-col items-center justify-center space-y-8 sm:space-y-12 animate-fade-in-up w-full">
         {/* شارة البطولة */}
-        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white/3 border border-white/8 text-sm sm:text-base font-bold text-[#E2B659]">
-          <span className="w-2 h-2 rounded-full bg-[#E2B659] animate-pulse" />
+        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gold/10 border border-gold/20 text-sm sm:text-base font-bold text-cream">
+          <span className="w-2 h-2 rounded-full bg-cream animate-pulse" />
           {activeTournament.name}
         </div>
 
@@ -241,15 +241,15 @@ export default async function HomePage() {
       ══════════════════════════════════════════════════════ */}
       {activeVoteGoal && (
         <section className="animate-fade-in-up w-full px-2">
-          <div className="rounded-2xl glass-panel border border-[#E2B659]/20 bg-gradient-to-r from-[#E2B659]/5 via-transparent to-transparent p-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-right">
+          <div className="rounded-2xl glass-panel border border-gold/20 bg-gradient-to-r from-gold/5 via-transparent to-transparent p-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-right">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#E2B659]/10 border border-[#E2B659]/20 flex items-center justify-center text-[#E2B659] flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center text-cream flex-shrink-0">
                 <Vote className="w-6 h-6 animate-bounce" />
               </div>
               <div className="space-y-1">
                 <h4 className="text-base sm:text-lg font-black text-white">التصويت مفتوح الآن!</h4>
                 <p className="text-sm sm:text-base text-gray-300 font-medium">
-                  صوّت لأفضل هدف للاعب <span className="text-[#E2B659] font-bold">{activeVoteGoal.player.name}</span> في لقاء {activeVoteGoal.match.homeTeam.name} ضد {activeVoteGoal.match.awayTeam.name}.
+                  صوّت لأفضل هدف للاعب <span className="text-cream font-bold">{activeVoteGoal.player.name}</span> في لقاء {activeVoteGoal.match.homeTeam.name} ضد {activeVoteGoal.match.awayTeam.name}.
                 </p>
               </div>
             </div>
@@ -269,12 +269,12 @@ export default async function HomePage() {
       <section className="space-y-5 animate-fade-in-up animate-delay-100 w-full">
         <div className="flex items-center justify-between px-3">
           <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-[#E2B659]" />
+            <Sparkles className="w-6 h-6 text-cream" />
             المباراة المميزة
           </h2>
           <Link
             href="/matches"
-            className="text-sm sm:text-base text-[#E2B659] hover:text-[#F1D494] transition-colors flex items-center gap-0.5 font-bold"
+            className="text-sm sm:text-base text-cream hover:text-white transition-colors flex items-center gap-0.5 font-bold"
           >
             جدول المباريات
             <ChevronLeft className="w-5 h-5" />
@@ -307,7 +307,7 @@ export default async function HomePage() {
             <div className="flex items-center justify-between w-full max-w-3xl gap-4 sm:gap-12">
               {/* الفريق الأول */}
               <div className="flex flex-col items-center gap-4 flex-1 text-center min-w-0">
-                <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-white/8 to-white/3 border border-white/10 flex items-center justify-center text-lg sm:text-2xl font-black text-[#E2B659] shadow-inner font-outfit">
+                <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-white/8 to-white/3 border border-white/10 flex items-center justify-center text-lg sm:text-2xl font-black text-cream shadow-inner font-outfit">
                   {getTeamInitials(featuredMatch.homeTeam.name)}
                 </div>
                 <span className="text-base sm:text-xl font-bold text-white truncate w-full px-1">
@@ -323,7 +323,7 @@ export default async function HomePage() {
                   </span>
                 ) : (
                   <div className="text-center space-y-2">
-                    <span className="block text-lg sm:text-2xl font-bold text-[#E2B659] font-outfit">{time}</span>
+                    <span className="block text-lg sm:text-2xl font-bold text-cream font-outfit">{time}</span>
                     <span className="block text-sm sm:text-base text-gray-400 font-semibold">{date}</span>
                   </div>
                 )}
@@ -332,7 +332,7 @@ export default async function HomePage() {
 
               {/* الفريق الثاني */}
               <div className="flex flex-col items-center gap-4 flex-1 text-center min-w-0">
-                <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-white/8 to-white/3 border border-white/10 flex items-center justify-center text-lg sm:text-2xl font-black text-[#E2B659] shadow-inner font-outfit">
+                <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-white/8 to-white/3 border border-white/10 flex items-center justify-center text-lg sm:text-2xl font-black text-cream shadow-inner font-outfit">
                   {getTeamInitials(featuredMatch.awayTeam.name)}
                 </div>
                 <span className="text-base sm:text-xl font-bold text-white truncate w-full px-1">
@@ -364,10 +364,10 @@ export default async function HomePage() {
         <div className="space-y-5 w-full">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-[#E2B659]" />
+              <Trophy className="w-6 h-6 text-cream" />
               صدارة مجموعات البطولة
             </h3>
-            <Link href="/standings" className="text-sm sm:text-base text-[#E2B659] hover:underline font-bold">
+            <Link href="/standings" className="text-sm sm:text-base text-cream hover:underline font-bold">
               جدول الترتيب الكامل ←
             </Link>
           </div>
@@ -396,7 +396,7 @@ export default async function HomePage() {
                       </td>
                       <td className="py-4.5 px-5 text-center font-outfit text-gray-300 font-semibold">{row.played}</td>
                       <td className="py-4.5 px-5 text-center font-outfit text-gray-300 font-semibold">{row.gd}</td>
-                      <td className="py-4.5 px-5 text-center font-black font-outfit text-[#E2B659] text-lg sm:text-xl">{row.points}</td>
+                      <td className="py-4.5 px-5 text-center font-black font-outfit text-cream text-lg sm:text-xl">{row.points}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -409,10 +409,10 @@ export default async function HomePage() {
         <div className="space-y-5 w-full flex flex-col justify-between">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
-              <Award className="w-6 h-6 text-[#E2B659]" />
+              <Award className="w-6 h-6 text-cream" />
               أفضل هدافي البطولة
             </h3>
-            <Link href="/standings" className="text-sm sm:text-base text-[#E2B659] hover:underline font-bold">
+            <Link href="/standings" className="text-sm sm:text-base text-cream hover:underline font-bold">
               جدول الهدافين الكامل ←
             </Link>
           </div>
@@ -431,7 +431,7 @@ export default async function HomePage() {
                     <span className="text-xs sm:text-sm font-bold text-white line-clamp-1 w-full">{secondPlace.name}</span>
                     <span className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 w-full">{secondPlace.team.name}</span>
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-base sm:text-xl font-black font-outfit text-[#E2B659]">{secondPlace.goalsCount}</span>
+                      <span className="text-base sm:text-xl font-black font-outfit text-cream">{secondPlace.goalsCount}</span>
                       <span className="text-[10px] text-gray-500 font-bold">أهداف</span>
                     </div>
                   </div>
@@ -441,16 +441,16 @@ export default async function HomePage() {
               {/* المركز الأول (الوسط والأعلى) */}
               {firstPlace && (
                 <div className="flex flex-col items-center w-28 sm:w-32 space-y-2 z-10">
-                  <div className="text-xs sm:text-sm text-[#E2B659] font-bold flex flex-col items-center">
+                  <div className="text-xs sm:text-sm text-cream font-bold flex flex-col items-center">
                     <span className="text-2xl animate-bounce">🥇</span>
-                    <span className="text-[11px] sm:text-xs font-black leading-none text-[#E2B659]">المتصدر</span>
+                    <span className="text-[11px] sm:text-xs font-black leading-none text-cream">المتصدر</span>
                   </div>
-                  <div className="w-full h-[135px] sm:h-[150px] rounded-t-2xl border border-[#E2B659]/30 bg-gradient-to-t from-[#E2B659]/12 to-transparent shadow-[0_0_15px_rgba(226,182,89,0.06)] flex flex-col items-center justify-between p-2.5 text-center">
+                  <div className="w-full h-[135px] sm:h-[150px] rounded-t-2xl border border-gold/30 bg-gradient-to-t from-gold/12 to-transparent shadow-[0_0_15px_rgba(92,19,31,0.06)] flex flex-col items-center justify-between p-2.5 text-center">
                     <span className="text-sm sm:text-base font-black text-white line-clamp-1 w-full">{firstPlace.name}</span>
-                    <span className="text-[10px] sm:text-xs text-[#E2B659] font-bold line-clamp-1 w-full">{firstPlace.team.name}</span>
+                    <span className="text-[10px] sm:text-xs text-cream font-bold line-clamp-1 w-full">{firstPlace.team.name}</span>
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-xl sm:text-3xl font-black font-outfit text-[#E2B659]">{firstPlace.goalsCount}</span>
-                      <span className="text-[10px] sm:text-xs text-[#E2B659] font-bold">أهداف</span>
+                      <span className="text-xl sm:text-3xl font-black font-outfit text-cream">{firstPlace.goalsCount}</span>
+                      <span className="text-[10px] sm:text-xs text-cream font-bold">أهداف</span>
                     </div>
                   </div>
                 </div>
@@ -467,7 +467,7 @@ export default async function HomePage() {
                     <span className="text-xs sm:text-sm font-bold text-white line-clamp-1 w-full">{thirdPlace.name}</span>
                     <span className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 w-full">{thirdPlace.team.name}</span>
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-base sm:text-xl font-black font-outfit text-[#E2B659]">{thirdPlace.goalsCount}</span>
+                      <span className="text-base sm:text-xl font-black font-outfit text-cream">{thirdPlace.goalsCount}</span>
                       <span className="text-[10px] text-gray-500 font-bold">أهداف</span>
                     </div>
                   </div>
@@ -488,7 +488,7 @@ export default async function HomePage() {
                       </div>
                     </div>
                     <div className="flex items-baseline gap-0.5">
-                      <span className="font-black font-outfit text-[#E2B659] text-lg">{player.goalsCount}</span>
+                      <span className="font-black font-outfit text-cream text-lg">{player.goalsCount}</span>
                       <span className="text-xs text-gray-500 font-bold">أهداف</span>
                     </div>
                   </div>
@@ -503,7 +503,7 @@ export default async function HomePage() {
           5. شريط الرعاة وشركاء النجاح (Sponsors Bar)
       ══════════════════════════════════════════════════════ */}
       <section className="space-y-4 text-center w-full animate-delay-300">
-        <span className="text-xs sm:text-sm font-bold tracking-widest text-[#E2B659]/40 uppercase">
+        <span className="text-xs sm:text-sm font-bold tracking-widest text-cream/40 uppercase">
           شركاء النجاح والرعاة
         </span>
         <div className="py-4 border-t border-b border-white/3 w-full">

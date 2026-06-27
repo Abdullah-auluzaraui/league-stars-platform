@@ -46,15 +46,15 @@ export default function HeroStats({
   return (
     <div className="flex items-center gap-4 sm:gap-8 text-sm sm:text-lg text-gray-300 font-semibold font-outfit animate-fade-in-up animate-delay-100 opacity-0" style={{ animationFillMode: 'forwards' }}>
       <span className="flex items-center gap-2">
-        <span className="text-[#E2B659] font-black text-lg sm:text-2xl">{currentGoals}</span> أهداف مسجلة
+        <span className="text-cream font-black text-lg sm:text-2xl">{currentGoals}</span> أهداف مسجلة
       </span>
       <span className="w-2 h-2 rounded-full bg-white/20" />
       <span className="flex items-center gap-2">
-        <span className="text-[#E2B659] font-black text-lg sm:text-2xl">{currentTeams}</span> فرق منافسة
+        <span className="text-cream font-black text-lg sm:text-2xl">{currentTeams}</span> فرق منافسة
       </span>
       <span className="w-2 h-2 rounded-full bg-white/20" />
       <span className="flex items-center gap-2">
-        <span className="text-[#E2B659] font-black text-lg sm:text-2xl">{currentMatches}</span> مباراة ملعوبة
+        <span className="text-cream font-black text-lg sm:text-2xl">{currentMatches}</span> مباراة ملعوبة
       </span>
     </div>
   );

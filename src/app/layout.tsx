@@ -34,7 +34,7 @@ export default function RootLayout({
       dir="rtl"
       className={`${elMessiri.variable} ${outfit.variable} scroll-smooth`}
     >
-      <body className="bg-[#1b1b1f] text-[#f4f4f5] min-h-screen antialiased selection:bg-[#E2B659]/30 selection:text-[#E2B659] overflow-x-hidden">
+      <body className="bg-[#1b1b1f] text-[#f4f4f5] min-h-screen antialiased selection:bg-gold/40 selection:text-cream overflow-x-hidden">
         {/* Wrapper to contain all elements and absolutely prevent any horizontal overflow */}
         <div className="relative min-h-screen w-full flex flex-col overflow-hidden">
           
@@ -47,7 +47,7 @@ export default function RootLayout({
             <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 h-16 sm:h-20 flex items-center justify-between">
               {/* Logo and Brand (Compact again) */}
               <Link href="/" className="flex items-center gap-3 group">
-                <div className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden rounded-xl bg-white/5 p-1 border border-white/10 transition-all duration-500 group-hover:border-[#E2B659]/40 group-hover:shadow-[0_0_20px_rgba(226,182,89,0.15)]">
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden rounded-xl bg-white/5 p-1 border border-white/10 transition-all duration-500 group-hover:border-cream/40 group-hover:shadow-[0_0_20px_rgba(255, 255, 255, 0.15)]">
                   <Image
                     src="/شعار البطولة.png"
                     alt="شعار البطولة"
@@ -58,10 +58,10 @@ export default function RootLayout({
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide text-white group-hover:text-[#E2B659] transition-colors duration-300">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide text-white group-hover:text-cream transition-colors duration-300">
                     نجوم الدوري
                   </span>
-                  <span className="text-[9px] sm:text-xs text-[#E2B659]/70 font-semibold tracking-wider font-outfit">
+                  <span className="text-[9px] sm:text-xs text-cream/70 font-semibold tracking-wider font-outfit">
                     TOURNAMENT STARS
                   </span>
                 </div>
@@ -71,7 +71,7 @@ export default function RootLayout({
               <nav className="hidden md:flex items-center gap-3 lg:gap-6">
                 <Link
                   href="/"
-                  className="px-4 py-2 text-sm sm:text-base font-semibold text-[#E2B659] hover:text-white rounded-full bg-white/5 border border-[#E2B659]/15 transition-all duration-300"
+                  className="px-4 py-2 text-sm sm:text-base font-semibold text-cream hover:text-white rounded-full bg-white/5 border border-cream/15 transition-all duration-300"
                 >
                   الرئيسية
                 </Link>
@@ -112,7 +112,7 @@ export default function RootLayout({
             <nav className="flex justify-around items-center">
               <Link
                 href="/"
-                className="flex flex-col items-center justify-center gap-1 py-1 px-4 text-[#E2B659] transition-all duration-300"
+                className="flex flex-col items-center justify-center gap-1 py-1 px-4 text-cream transition-all duration-300"
               >
                 <Home className="w-5.5 h-5.5" />
                 <span className="text-[11px] font-bold">الرئيسية</span>
@@ -159,13 +159,13 @@ export default function RootLayout({
 
                 {/* Quick Links (Hidden on Mobile) */}
                 <div className="hidden md:flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-                  <Link href="/" className="hover:text-[#E2B659] transition-colors duration-300">
+                  <Link href="/" className="hover:text-cream transition-colors duration-300">
                     الرئيسية
                   </Link>
-                  <Link href="/matches" className="hover:text-[#E2B659] transition-colors duration-300">
+                  <Link href="/matches" className="hover:text-cream transition-colors duration-300">
                     المباريات
                   </Link>
-                  <Link href="/standings" className="hover:text-[#E2B659] transition-colors duration-300">
+                  <Link href="/standings" className="hover:text-cream transition-colors duration-300">
                     الترتيب والفرق
                   </Link>
                 </div>
@@ -173,7 +173,7 @@ export default function RootLayout({
                 {/* Copyright / Info */}
                 <div className="flex flex-col items-center md:items-end gap-1 text-sm text-gray-400">
                   <span>© {new Date().getFullYear()} نجوم الدوري. جميع الحقوق محفوظة.</span>
-                  <span className="text-xs text-[#E2B659]/70 font-semibold tracking-wide">
+                  <span className="text-xs text-cream/70 font-semibold tracking-wide">
                     المملكة العربية السعودية
                   </span>
                 </div>

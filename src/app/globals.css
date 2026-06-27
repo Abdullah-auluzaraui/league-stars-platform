@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gold: #E2B659;
-  --color-gold-dark: #C5983F;
-  --color-gold-light: #F1D494;
+  --color-gold: #5C131F;
+  --color-gold-dark: #3D0C15;
+  --color-gold-light: #DCA1AC;
+  --color-cream: #F3EED9;
   --color-bg-dark: #1b1b1f;
   --color-bg-darker: #050507;
   
@@ -15,7 +16,7 @@
 html,
 body {
   background-color: #1b1b1f;
-  color: #f4f4f5;
+  color: #F3EED9;
   font-family: var(--font-el-messiri);
   overflow-x: hidden;
   max-width: 100%;
@@ -88,7 +89,7 @@ body {
 
 /* Featured Match Card */
 .glass-card-featured {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0%, rgba(226, 182, 89, 0.008) 50%, rgba(255, 255, 255, 0.002) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0%, rgba(92, 19, 31, 0.008) 50%, rgba(255, 255, 255, 0.002) 100%);
   border-color: rgba(255, 255, 255, 0.045);
   box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.6);
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -114,9 +115,9 @@ body {
   background: linear-gradient(
     to right,
     #ffffff 10%,
-    #f5e0ad 35%,
-    #e2b659 50%,
-    #f5e0ad 65%,
+    #F3EED9 35%,
+    #ffffff 50%,
+    #F3EED9 65%,
     #ffffff 90%
   );
   background-size: 200% auto;
@@ -171,16 +172,16 @@ body {
 /* Custom premium buttons */
 .btn-gold {
   position: relative;
-  background: linear-gradient(135deg, #E2B659 0%, #C5983F 100%);
-  color: #050508;
+  background: linear-gradient(135deg, #5C131F 0%, #3D0C15 100%);
+  color: #F3EED9;
   font-weight: 600;
   border-radius: 99px;
-  box-shadow: 0 4px 20px rgba(226, 182, 89, 0.15);
+  box-shadow: 0 4px 20px rgba(92, 19, 31, 0.2);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-gold:hover {
-  box-shadow: 0 8px 25px rgba(226, 182, 89, 0.3);
+  box-shadow: 0 8px 25px rgba(92, 19, 31, 0.35);
   transform: translateY(-1px);
 }
 
