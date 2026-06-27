@@ -37,7 +37,7 @@ export async function updateSetting(formData: FormData) {
       update: { value: result.data.value },
       create: { key: result.data.key, value: result.data.value },
     });
-    revalidateTag('settings');
+    revalidateTag('settings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -92,7 +92,7 @@ export async function updateHero(formData: FormData) {
     }
 
     await Promise.all(updates);
-    revalidateTag('settings');
+    revalidateTag('settings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -140,7 +140,7 @@ export async function upsertSponsor(formData: FormData) {
       });
     }
 
-    revalidateTag('sponsors');
+    revalidateTag('sponsors', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -151,7 +151,7 @@ export async function deleteSponsor(sponsorId: string) {
   try {
     await verifyAdmin();
     await prisma.sponsor.delete({ where: { id: sponsorId } });
-    revalidateTag('sponsors');
+    revalidateTag('sponsors', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);

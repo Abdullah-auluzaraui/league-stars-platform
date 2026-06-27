@@ -80,7 +80,7 @@ export async function submitVote(formData: FormData) {
       data: { goalId, fingerprint, visitorIp },
     });
 
-    revalidateTag('votes');
+    revalidateTag('votes', 'max');
     return { success: true };
   } catch {
     return { error: 'حدث خطأ أثناء تسجيل التصويت' };
@@ -141,7 +141,7 @@ export async function nominateGoal(goalId: string, nominated: boolean) {
       where: { id: goalId },
       data: { isNominated: nominated },
     });
-    revalidateTag('votes');
+    revalidateTag('votes', 'max');
     return { success: true };
   } catch (error) {
     const { handleActionError } = await import('@/core/lib/validation');

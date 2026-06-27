@@ -33,8 +33,8 @@ export async function createPlayer(formData: FormData) {
       },
     });
 
-    revalidateTag('teams');
-    revalidateTag('scorers');
+    revalidateTag('teams', 'max');
+    revalidateTag('scorers', 'max');
     return { success: true, playerId: player.id };
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Unique constraint')) {
@@ -71,8 +71,8 @@ export async function updatePlayer(formData: FormData) {
       },
     });
 
-    revalidateTag('teams');
-    revalidateTag('scorers');
+    revalidateTag('teams', 'max');
+    revalidateTag('scorers', 'max');
     return { success: true };
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Unique constraint')) {
@@ -87,8 +87,8 @@ export async function deletePlayer(playerId: string) {
   try {
     await verifyAdmin();
     await prisma.player.delete({ where: { id: playerId } });
-    revalidateTag('teams');
-    revalidateTag('scorers');
+    revalidateTag('teams', 'max');
+    revalidateTag('scorers', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);

@@ -40,7 +40,7 @@ export async function createTeam(formData: FormData) {
       });
     }
 
-    revalidateTag('teams');
+    revalidateTag('teams', 'max');
     return { success: true, teamId: team.id };
   } catch (e: unknown) {
     if (e instanceof Error && e.message.includes('Unique constraint')) {
@@ -73,7 +73,7 @@ export async function updateTeam(formData: FormData) {
       },
     });
 
-    revalidateTag('teams');
+    revalidateTag('teams', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -85,8 +85,8 @@ export async function deleteTeam(teamId: string) {
   try {
     await verifyAdmin();
     await prisma.team.delete({ where: { id: teamId } });
-    revalidateTag('teams');
-    revalidateTag('standings');
+    revalidateTag('teams', 'max');
+    revalidateTag('standings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);

@@ -45,8 +45,8 @@ export async function createMatch(formData: FormData) {
       },
     });
 
-    revalidateTag('matches');
-    revalidateTag('standings');
+    revalidateTag('matches', 'max');
+    revalidateTag('standings', 'max');
     return { success: true, matchId: match.id };
   } catch (error) {
     return handleActionError(error);
@@ -82,8 +82,8 @@ export async function updateScore(formData: FormData) {
       },
     });
 
-    revalidateTag('matches');
-    revalidateTag('standings');
+    revalidateTag('matches', 'max');
+    revalidateTag('standings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -101,7 +101,7 @@ export async function updateMatchStatus(
       where: { id: matchId },
       data: { status },
     });
-    revalidateTag('matches');
+    revalidateTag('matches', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -113,8 +113,8 @@ export async function deleteMatch(matchId: string) {
   try {
     await verifyAdmin();
     await prisma.match.delete({ where: { id: matchId } });
-    revalidateTag('matches');
-    revalidateTag('standings');
+    revalidateTag('matches', 'max');
+    revalidateTag('standings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -178,9 +178,9 @@ export async function addGoal(formData: FormData) {
       });
     }
 
-    revalidateTag('matches');
-    revalidateTag('standings');
-    revalidateTag('scorers');
+    revalidateTag('matches', 'max');
+    revalidateTag('standings', 'max');
+    revalidateTag('scorers', 'max');
     return { success: true, goalId: goal.id };
   } catch (error) {
     return handleActionError(error);
@@ -220,9 +220,9 @@ export async function deleteGoal(goalId: string) {
       });
     }
 
-    revalidateTag('matches');
-    revalidateTag('standings');
-    revalidateTag('scorers');
+    revalidateTag('matches', 'max');
+    revalidateTag('standings', 'max');
+    revalidateTag('scorers', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
@@ -247,7 +247,7 @@ export async function addCard(formData: FormData) {
     }
 
     await prisma.card.create({ data: result.data });
-    revalidateTag('standings');
+    revalidateTag('standings', 'max');
     return { success: true };
   } catch (error) {
     return handleActionError(error);
