@@ -54,9 +54,9 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, { label: string; cls: string }> = {
-  scheduled: { label: 'قادمة',  cls: 'status-scheduled' },
-  live:      { label: 'مباشر', cls: 'status-live'      },
-  finished:  { label: 'انتهت', cls: 'status-finished'  },
+  scheduled: { label: 'قادمة', cls: 'status-scheduled' },
+  live: { label: 'مباشر', cls: 'status-live' },
+  finished: { label: 'انتهت', cls: 'status-finished' },
   cancelled: { label: 'ملغاة', cls: 'status-cancelled' },
 };
 
@@ -80,7 +80,7 @@ function MatchCard({ match }: {
 }) {
   const statusInfo = STATUS_STYLES[match.status] ?? STATUS_STYLES.scheduled;
   const isFinished = match.status === 'finished';
-  const isLive     = match.status === 'live';
+  const isLive = match.status === 'live';
 
   return (
     <article className={`match-card-full ${isLive ? 'match-live' : ''}`}>
@@ -142,9 +142,9 @@ function MatchCard({ match }: {
 export default async function MatchesPage() {
   const { tournament, matches, cards, tournamentTeams } = await getMatchesPageData();
 
-  const isKnockout    = tournament?.type === 'knockout';
-  const isGroupStage  = !isKnockout; // افتراضي أو group_stage صريح
-  const liveMatches   = matches.filter((m) => m.status === 'live');
+  const isKnockout = tournament?.type === 'knockout';
+  const isGroupStage = !isKnockout; // افتراضي أو group_stage صريح
+  const liveMatches = matches.filter((m) => m.status === 'live');
 
   // ── بيانات محرك الترتيب (مجموعات فقط) ──
   const matchRows: MatchRow[] = matches.map((m) => ({
@@ -306,7 +306,7 @@ export default async function MatchesPage() {
                             const teamInfo = tournamentTeams.find(
                               (tt) => tt.teamId === row.teamId
                             )?.team;
-                            const isTop    = idx === 0;
+                            const isTop = idx === 0;
                             const isSecond = idx === 1;
                             return (
                               <tr
