@@ -1,8 +1,9 @@
 import { El_Messiri, Outfit } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Home, Calendar, Trophy } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import './globals.css';
+import { DesktopNav, MobileNav } from './components/Navigation';
 
 const elMessiri = El_Messiri({
   subsets: ['arabic'],
@@ -19,8 +20,8 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: 'نجوم الدوري | منصة البطولات التفاعلية',
-  description: 'تابع مباريات، ترتيب، وإحصائيات بطولة نجوم الدوري لكرة القدم.',
+  title: 'League Stars | منصة البطولات التفاعلية',
+  description: 'تابع مباريات، ترتيب، وإحصائيات بطولة نجوم الدوري لكرة القدم بالوقت الفعلي.',
 };
 
 export default function RootLayout({
@@ -34,150 +35,97 @@ export default function RootLayout({
       dir="rtl"
       className={`${elMessiri.variable} ${outfit.variable} scroll-smooth`}
     >
-      <body className="bg-[#1b1b1f] text-[#f4f4f5] min-h-screen antialiased selection:bg-gold/40 selection:text-cream overflow-x-hidden">
-        {/* Wrapper to contain all elements and absolutely prevent any horizontal overflow */}
-        <div className="relative min-h-screen w-full flex flex-col overflow-hidden">
+      <body className="bg-[#0e0e12] text-[#F3EED9] min-h-screen antialiased selection:bg-[#C9971A]/30 selection:text-[#F3EED9] overflow-x-hidden">
+        
+        {/* الحاوية الرئيسية */}
+        <div className="relative min-h-screen w-full flex flex-col">
           
-          {/* Glow Effects (Contained inside the overflow-hidden wrapper) */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-glow-radial pointer-events-none z-0" />
-          <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-glow-emerald pointer-events-none z-0" />
+          {/* تأثير التوهج العلوي */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[400px] bg-glow-radial pointer-events-none z-0" />
 
-          {/* Header / Navbar (Sleek, compact, and elegant) */}
-          <header className="sticky top-0 z-50 w-full glass-panel border-b border-white/5 backdrop-blur-md">
-            <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 h-16 sm:h-20 flex items-center justify-between">
-              {/* Logo and Brand (Compact again) */}
-              <Link href="/" className="flex items-center gap-3 group">
-                <div className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden rounded-xl bg-white/5 p-1 border border-white/10 transition-all duration-500 group-hover:border-cream/40 group-hover:shadow-[0_0_20px_rgba(255, 255, 255, 0.15)]">
+          {/* الهيدر — كبسولة عائمة فخمة ثابتة */}
+          <header
+            className="fixed top-0 md:top-4 left-0 right-0 z-50 w-full md:max-w-2xl md:mx-auto transition-all duration-300 md:rounded-2xl"
+            style={{
+              background: 'rgba(12, 12, 18, 0.85)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              borderBottom: '1px solid rgba(201, 151, 26, 0.12)',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <div className="max-w-2xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+              
+              {/* الشعار */}
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <div className="relative w-8 h-8 sm:w-9 sm:h-9 overflow-hidden rounded-lg flex-shrink-0 transition-all duration-500 group-hover:scale-110">
                   <Image
                     src="/شعار البطولة.png"
                     alt="شعار البطولة"
                     fill
-                    sizes="(max-width: 768px) 40px, 48px"
-                    className="object-contain p-1 transition-transform duration-500 group-hover:scale-110"
+                    sizes="36px"
+                    className="object-contain"
                     priority
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide text-white group-hover:text-cream transition-colors duration-300">
-                    نجوم الدوري
+                  <span className="text-sm sm:text-base font-black tracking-tight text-white group-hover:text-[#F0C040] transition-colors duration-300 leading-tight"
+                    style={{ textShadow: '0 0 20px rgba(201,151,26,0.15)' }}>
+                    League Stars
                   </span>
-                  <span className="text-[9px] sm:text-xs text-cream/70 font-semibold tracking-wider font-outfit">
-                    TOURNAMENT STARS
+                  <span className="text-[9px] font-bold tracking-[0.12em] font-outfit hidden sm:block"
+                    style={{ color: 'rgba(201,151,26,0.55)' }}>
+                    بطولة نجوم الدوري
                   </span>
                 </div>
               </Link>
 
-              {/* Desktop Navigation (Sleek and clean text sizes) */}
-              <nav className="hidden md:flex items-center gap-3 lg:gap-6">
-                <Link
-                  href="/"
-                  className="px-4 py-2 text-sm sm:text-base font-semibold text-cream hover:text-white rounded-full bg-white/5 border border-cream/15 transition-all duration-300"
-                >
-                  الرئيسية
-                </Link>
-                <Link
-                  href="/matches"
-                  className="px-4 py-2 text-sm sm:text-base font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300"
-                >
-                  المباريات
-                </Link>
-                <Link
-                  href="/standings"
-                  className="px-4 py-2 text-sm sm:text-base font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300"
-                >
-                  الترتيب والفرق
-                </Link>
-              </nav>
+              {/* ناف desktop */}
+              <DesktopNav />
 
-              {/* Action Button (Desktop - Compact & Premium) */}
-              <div className="hidden md:block">
-                <Link
-                  href="/matches"
-                  className="btn-gold px-6 py-2.5 text-sm sm:text-base flex items-center gap-2 font-bold"
-                >
-                  <Calendar className="w-4.5 h-4.5" />
-                  جدول المباريات
-                </Link>
-              </div>
             </div>
           </header>
 
-          {/* Main Content Container (More padding for breathing room) */}
-          <main className="flex-grow relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-16 pb-36 md:pb-16 box-border">
+          {/* محتوى الصفحة مع إزاحة علوية لمنع التداخل مع الهيدر الثابت */}
+          <main className="flex-grow relative z-10 w-full mx-auto px-4 sm:px-6 pt-20 md:pt-28 pb-8 md:pb-10 box-border">
             {children}
           </main>
 
-          {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-6 left-8 right-8 z-50 rounded-2xl glass-panel border border-white/8 shadow-2xl backdrop-blur-xl px-4 py-2.5">
-            <nav className="flex justify-around items-center">
-              <Link
-                href="/"
-                className="flex flex-col items-center justify-center gap-1 py-1 px-4 text-cream transition-all duration-300"
-              >
-                <Home className="w-5.5 h-5.5" />
-                <span className="text-[11px] font-bold">الرئيسية</span>
-              </Link>
-              <Link
-                href="/matches"
-                className="flex flex-col items-center justify-center gap-1 py-1 px-4 text-gray-400 hover:text-white transition-all duration-300"
-              >
-                <Calendar className="w-5.5 h-5.5" />
-                <span className="text-[11px] font-bold">المباريات</span>
-              </Link>
-              <Link
-                href="/standings"
-                className="flex flex-col items-center justify-center gap-1 py-1 px-4 text-gray-400 hover:text-white transition-all duration-300"
-              >
-                <Trophy className="w-5.5 h-5.5" />
-                <span className="text-[11px] font-bold">الترتيب والفرق</span>
-              </Link>
-            </nav>
-          </div>
+          {/* شريط التنقل السفلي — Mobile only */}
+          <MobileNav />
 
-          {/* Footer */}
-          <footer className="w-full border-t border-white/5 bg-black/40 backdrop-blur-md py-8 mt-auto relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-right">
-                {/* Brand Description */}
-                <div className="flex flex-col items-center md:items-start gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-white/5 border border-white/15">
-                      <Image
-                        src="/شعار البطولة.png"
-                        alt="شعار البطولة"
-                        fill
-                        sizes="32px"
-                        className="object-contain p-1"
-                      />
-                    </div>
-                    <span className="font-bold text-white text-base">نجوم الدوري</span>
-                  </div>
-                  <p className="text-sm text-gray-400 max-w-sm leading-relaxed">
-                    المنصة التفاعلية الرسمية لمتابعة أقوى بطولات كرة القدم المحلية، رصد حي للنتائج، وجدول ترتيب تفاعلي ومساحة تصويت تفاعلية للجماهير.
-                  </p>
+          {/* الفوتر */}
+          <footer
+            className="w-full pt-8 pb-24 md:pb-8 mt-auto relative z-10"
+            style={{
+              borderTop: '1px solid rgba(255,255,255,0.04)',
+              background: 'rgba(10,10,14,0.7)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            <div className="max-w-2xl mx-auto px-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <div className="relative w-7 h-7">
+                  <Image
+                    src="/شعار البطولة.png"
+                    alt="League Stars"
+                    fill
+                    sizes="28px"
+                    className="object-contain"
+                  />
                 </div>
-
-                {/* Quick Links (Hidden on Mobile) */}
-                <div className="hidden md:flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-                  <Link href="/" className="hover:text-cream transition-colors duration-300">
-                    الرئيسية
-                  </Link>
-                  <Link href="/matches" className="hover:text-cream transition-colors duration-300">
-                    المباريات
-                  </Link>
-                  <Link href="/standings" className="hover:text-cream transition-colors duration-300">
-                    الترتيب والفرق
-                  </Link>
-                </div>
-
-                {/* Copyright / Info */}
-                <div className="flex flex-col items-center md:items-end gap-1 text-sm text-gray-400">
-                  <span>© {new Date().getFullYear()} نجوم الدوري. جميع الحقوق محفوظة.</span>
-                  <span className="text-xs text-cream/70 font-semibold tracking-wide">
-                    المملكة العربية السعودية
-                  </span>
-                </div>
+                <span className="text-sm font-black text-white">League Stars</span>
               </div>
+              <div className="flex items-center justify-center gap-4 text-[11px] text-white/20 font-semibold mb-3">
+                <Link href="/" className="hover:text-white/50 transition-colors">الرئيسية</Link>
+                <span className="text-white/10">·</span>
+                <Link href="/matches" className="hover:text-white/50 transition-colors">المباريات</Link>
+                <span className="text-white/10">·</span>
+                <Link href="/standings" className="hover:text-white/50 transition-colors">المنافسات</Link>
+              </div>
+              <p className="text-[10px] text-white/12 font-semibold">
+                © {new Date().getFullYear()} League Stars — المملكة العربية السعودية
+              </p>
             </div>
           </footer>
           
