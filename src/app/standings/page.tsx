@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/core/lib/prisma";
+import { prisma } from "@/core/lib/prisma";
 import StandingsClient from "./StandingsClient";
 
 export type TeamStanding = {
@@ -37,6 +37,7 @@ export type TeamWithPlayers = {
     name: string;
     jerseyNumber: number | null;
     position: string | null;
+    goalsCount?: number;
   }[];
 };
 
@@ -160,7 +161,7 @@ async function getStandingsData(): Promise<StandingsData> {
     const teamsRaw = await prisma.team.findMany({
       orderBy: { name: "asc" },
       include: {
-        players: { select: { id: true, name: true, jerseyNumber: true, position: true }, orderBy: { jerseyNumber: "asc" } },
+        players: { select: { id: true, name: true, jerseyNumber: true, position: true, goalsCount: true }, orderBy: { jerseyNumber: "asc" } },
       },
     });
 

@@ -122,6 +122,8 @@ export default function RootLayout({
                 <Link href="/matches" className="hover:text-white/50 transition-colors">المباريات</Link>
                 <span className="text-white/10">·</span>
                 <Link href="/standings" className="hover:text-white/50 transition-colors">المنافسات</Link>
+                <span className="text-white/10">·</span>
+                <Link href="/votes" className="hover:text-white/50 transition-colors">هدف الجولة</Link>
               </div>
               <p className="text-[10px] text-white/12 font-semibold">
                 © {new Date().getFullYear()} League Stars — المملكة العربية السعودية

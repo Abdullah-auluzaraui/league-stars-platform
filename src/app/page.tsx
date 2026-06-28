@@ -292,32 +292,28 @@ export default async function HomePage() {
         <div
           className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse 70% 50% at 50% 15%, rgba(201,151,26,0.25) 0%, rgba(92,19,31,0.12) 40%, transparent 70%)',
+            background: 'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(92,19,31,0.38) 0%, rgba(201,151,26,0.06) 50%, transparent 75%)',
           }}
         />
 
         {/* Tournament badge */}
-        <div className="relative animate-fade-in-up mb-6 z-10">
+        <div className="relative animate-fade-in-up mb-12 z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border"
-            style={{ background: 'rgba(201,151,26,0.08)', borderColor: 'rgba(201,151,26,0.3)' }}>
+            style={{ 
+              background: 'rgba(255,255,255,0.04)', 
+              borderColor: 'rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)'
+            }}>
             <span className="w-1.5 h-1.5 rounded-full bg-[#C9971A] animate-glow-pulse" />
-            <span className="text-xs font-bold text-[#C9971A]/80 tracking-wide">{tournament.name}</span>
+            <span className="text-xs font-bold text-[#F0C040] tracking-wide">{tournament.name}</span>
           </div>
         </div>
 
         {/* Trophy — main visual */}
-        <div className="relative z-10 mb-8 animate-trophy-float">
-          {/* Outer glow rings */}
-          <div
-            className="absolute inset-[-20px] rounded-full animate-glow-soft pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(201,151,26,0.18) 0%, transparent 70%)' }}
-          />
-          <div
-            className="absolute inset-[-4px] rounded-full border animate-glow-pulse pointer-events-none"
-            style={{ borderColor: 'rgba(201,151,26,0.2)' }}
-          />
+        <div className="relative z-10 mb-8 animate-trophy-float w-40 h-40 sm:w-48 sm:h-48 mx-auto">
           {/* Trophy image */}
-          <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto">
+          <div className="relative w-full h-full">
             <Image
               src="/شعار البطولة.png"
               alt="شعار بطولة نجوم الدوري"

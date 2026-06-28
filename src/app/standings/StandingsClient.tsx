@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
-import { Trophy, Star, Shield } from "lucide-react";
+import { Trophy, Star, Shield, X, Search } from "lucide-react";
 import type { StandingsData, TeamWithPlayers } from "./page";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -42,24 +42,51 @@ function getPositionColor(pos: string | null) {
   }
 }
 
+
+function cleanPlayerName(playerName: string) {
+  if (!playerName) return "";
+  return playerName.split(" - ")[0];
+}
+
+
 // ─── TeamAvatar ───────────────────────────────────────────────────────────────
 
 function TeamAvatar({ name, logoUrl, size = "md" }: { name: string; logoUrl: string | null; size?: "sm" | "md" | "lg" }) {
-  const dim = size === "sm" ? 28 : size === "lg" ? 56 : 36;
-  const textSize = size === "sm" ? "text-[9px]" : size === "lg" ? "text-base" : "text-[11px]";
+  const dim = size === "sm" ? 28 : size === "lg" ? 64 : 40;
+  const textSize = size === "sm" ? "text-[10px]" : size === "lg" ? "text-lg" : "text-xs";
+  
+  // Check if logoUrl is a valid image path/URL to prevent rendering text placeholders like "1"
+  const hasValidLogo = logoUrl && (logoUrl.startsWith("/") || logoUrl.startsWith("http") || logoUrl.includes("."));
+
   return (
     <div
-      className={`relative rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0`}
-      style={{ width: dim, height: dim, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+      className="relative rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 transition-transform duration-300"
+      style={{
+        width: dim,
+        height: dim,
+        background: size === "lg" 
+          ? "linear-gradient(135deg, rgba(201,151,26,0.15) 0%, rgba(255,255,255,0.03) 100%)" 
+          : "rgba(255,255,255,0.04)",
+        border: size === "lg"
+          ? "2px solid rgba(201,151,26,0.35)"
+          : "1px solid rgba(255,255,255,0.08)",
+        boxShadow: size === "lg" ? "0 8px 24px -6px rgba(201, 151, 26, 0.25)" : "none"
+      }}
     >
-      {logoUrl ? (
-        <Image src={logoUrl} alt={name} fill sizes={`${dim}px`} className="object-contain p-0.5" />
+      {hasValidLogo ? (
+        <Image src={logoUrl} alt={name} fill sizes={`${dim}px`} className="object-contain p-1" />
       ) : (
-        <span className={`${textSize} font-black text-white/70`}>{getInitials(name)}</span>
+        <span 
+          className={`${textSize} font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-[#C9971A]/70`}
+          style={{ textShadow: "0 2px 10px rgba(255,255,255,0.1)" }}
+        >
+          {getInitials(name)}
+        </span>
       )}
     </div>
   );
 }
+
 
 // ─── Tab Button ───────────────────────────────────────────────────────────────
 
@@ -319,121 +346,279 @@ function StandingsTab({ data }: { data: StandingsData }) {
 
 // ─── Tab 2: Teams & Squads ────────────────────────────────────────────────────
 
-function TeamsTab({ teams }: { teams: TeamWithPlayers[] }) {
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams[0]?.id ?? null);
-  const selectedTeam = teams.find((t) => t.id === selectedTeamId);
+interface TeamsTabProps {
+  teams: TeamWithPlayers[];
+  standings: Record<string, any[]>;
+}
+
+function TeamsTab({ teams, standings }: TeamsTabProps) {
+  const [activeTeam, setActiveTeam] = useState<TeamWithPlayers | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
+
+  // Map teamId -> groupName
+  const teamGroups = useMemo(() => {
+    const map: Record<string, string> = {};
+    Object.entries(standings).forEach(([groupName, groupTeams]) => {
+      groupTeams.forEach((t) => {
+        map[t.teamId] = groupName;
+      });
+    });
+    return map;
+  }, [standings]);
+
+  // Unique groups
+  const groups = useMemo(() => {
+    const g = new Set<string>();
+    teams.forEach((t) => {
+      const grp = teamGroups[t.id];
+      if (grp) g.add(grp);
+    });
+    return Array.from(g).sort();
+  }, [teams, teamGroups]);
+
+  // Filtered teams
+  const filteredTeams = useMemo(() => {
+    return teams.filter((team) => {
+      const matchesSearch = team.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+      const grp = teamGroups[team.id];
+      const matchesGroup = selectedGroup === "all" || grp === selectedGroup;
+      return matchesSearch && matchesGroup;
+    });
+  }, [teams, searchQuery, selectedGroup, teamGroups]);
 
   return (
-    <div className="space-y-4">
-      {/* Team Selector */}
-      <div className="flex gap-2 flex-wrap animate-fade-in-up">
-        {teams.map((team) => {
-          const isActive = selectedTeamId === team.id;
-          return (
+    <div className="space-y-5">
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="ابحث عن فريق..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] focus:border-[#C9971A]/50 focus:bg-white/[0.06] text-xs font-semibold text-[#F3EED9] placeholder-white/20 outline-none transition-all duration-300"
+          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+        </div>
+
+        {/* Group Filter Pills */}
+        {groups.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
             <button
-              key={team.id}
-              id={`team-select-${team.id}`}
-              onClick={() => setSelectedTeamId(team.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
-                isActive
+              onClick={() => setSelectedGroup("all")}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex-shrink-0 ${
+                selectedGroup === "all"
                   ? "bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/40"
-                  : "text-white/40 border border-white/[0.07] hover:text-white/70 hover:border-white/15 bg-white/[0.02] hover:bg-white/[0.05]"
+                  : "text-white/45 border border-white/[0.07] hover:text-white/70 hover:border-white/15 bg-white/[0.02]"
               }`}
             >
-              <TeamAvatar name={team.name} logoUrl={team.logoUrl} size="sm" />
-              {team.name}
+              الكل
             </button>
-          );
-        })}
+            {groups.map((grp) => (
+              <button
+                key={grp}
+                onClick={() => setSelectedGroup(grp)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex-shrink-0 ${
+                  selectedGroup === grp
+                    ? "bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/40"
+                    : "text-white/45 border border-white/[0.07] hover:text-white/70 hover:border-white/15 bg-white/[0.02]"
+                }`}
+              >
+                المجموعة {grp}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Squad Table */}
-      {selectedTeam && (
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in-up">
-          {/* Team Header */}
-          <div
-            className="px-4 py-3 flex items-center gap-3"
-            style={{ background: "rgba(201,151,26,0.07)", borderBottom: "1px solid rgba(201,151,26,0.14)" }}
-          >
-            <TeamAvatar name={selectedTeam.name} logoUrl={selectedTeam.logoUrl} size="md" />
-            <div>
-              <p className="text-sm font-black text-white/90">{selectedTeam.name}</p>
-              <p className="text-[10px] text-white/35 font-semibold">{selectedTeam.players.length} لاعب مسجل</p>
-            </div>
-          </div>
-
-          {/* Column headers */}
-          <div
-            className="px-4 py-2 grid text-[9px] font-black text-white/20 tracking-widest uppercase"
-            style={{ gridTemplateColumns: "36px 1fr auto", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-          >
-            <span className="text-center">رقم</span>
-            <span>اللاعب</span>
-            <span>المركز</span>
-          </div>
-
-          {/* Players */}
-          {selectedTeam.players.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-white/25 text-sm font-semibold">لا يوجد لاعبون مسجلون</p>
-            </div>
-          ) : (
-            <div>
-              {selectedTeam.players.map((player: TeamWithPlayers["players"][number], idx: number) => (
-                <div
-                  key={player.id}
-                  className="px-4 py-3 grid items-center hover:bg-white/[0.02] transition-colors duration-200"
-                  style={{
-                    gridTemplateColumns: "36px 1fr auto",
-                    borderBottom: idx < selectedTeam.players.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                  }}
-                >
-                  {/* Jersey Number */}
-                  <div className="flex justify-center">
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black score-number"
-                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}
-                    >
-                      {player.jerseyNumber ?? "—"}
-                    </div>
-                  </div>
-
-                  {/* Name */}
-                  <span className="text-sm font-semibold text-white/85">{player.name}</span>
-
-                  {/* Position */}
+      {/* Teams Grid */}
+      {filteredTeams.length === 0 ? (
+        <div className="glass-card rounded-2xl p-12 text-center animate-fade-in-up">
+          <div className="text-3xl mb-3">🔍</div>
+          <p className="text-white/30 font-semibold text-xs">لم نجد أي فريق يطابق بحثك</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 animate-fade-in-up">
+          {filteredTeams.map((team) => {
+            const groupName = teamGroups[team.id];
+            return (
+              <div
+                key={team.id}
+                onClick={() => setActiveTeam(team)}
+                className="glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center hover-lift cursor-pointer group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-[#C9971A]/0 to-[#C9971A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                
+                <TeamAvatar name={team.name} logoUrl={team.logoUrl} size="lg" />
+                
+                <h3 className="text-xs sm:text-sm font-black text-white/90 mt-3.5 group-hover:text-[#F0C040] transition-colors duration-300">
+                  {team.name}
+                </h3>
+                
+                {groupName && (
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full mt-2.5"
                     style={{
-                      color: getPositionColor(player.position),
-                      background: `${getPositionColor(player.position).replace("0.9", "0.12")}`,
-                      border: `1px solid ${getPositionColor(player.position).replace("0.9", "0.25")}`,
+                      background: "rgba(201,151,26,0.1)",
+                      color: "#F0C040",
+                      border: "1px solid rgba(201,151,26,0.25)"
                     }}
                   >
-                    {getPositionLabel(player.position)}
+                    المجموعة {groupName}
                   </span>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+                
+                <span className="text-[9px] text-white/30 font-bold mt-2">
+                  {team.players.length} لاعب مسجل
+                </span>
+
+                <span className="text-[9px] font-bold text-[#F0C040]/0 group-hover:text-[#F0C040]/100 transition-all duration-300 mt-2 flex items-center gap-1">
+                  استعراض التشكيلة ←
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {teams.length === 0 && (
-        <div className="glass-card rounded-2xl p-10 text-center">
-          <div className="text-3xl mb-3">⚽</div>
-          <p className="text-white/30 font-semibold text-sm">لا توجد فرق مسجلة بعد</p>
+      {/* Squad Modal */}
+      {activeTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-all duration-300">
+          <div className="absolute inset-0" onClick={() => setActiveTeam(null)} />
+          
+          <div className="relative w-full max-w-md glass-card rounded-3xl overflow-hidden animate-scale-in flex flex-col max-h-[85vh] z-10">
+            {/* Close Button */}
+            <button
+              onClick={() => setActiveTeam(null)}
+              className="absolute top-4 left-4 p-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/40 hover:text-white hover:bg-white/[0.08] transition-all duration-300 z-20 cursor-pointer"
+              aria-label="إغلاق"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Modal Header: Focused on Squad list without redundant giant team name */}
+            <div
+              className="px-6 py-6 flex flex-col items-center text-center relative"
+              style={{
+                background: "linear-gradient(to bottom, rgba(201, 151, 26, 0.12), transparent)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.05)"
+              }}
+            >
+              <TeamAvatar name={activeTeam.name} logoUrl={activeTeam.logoUrl} size="lg" />
+              
+              {/* Squad Title */}
+              <h3 className="text-sm font-black text-white/90 mt-3.5">التشكيلة الرسمية للاعبين</h3>
+              
+              {/* Integrated Subtitle showing Team and Group */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-[10px] font-black text-[#F0C040] bg-[#C9971A]/10 px-2 py-0.5 rounded-lg border border-[#C9971A]/20">
+                  {activeTeam.name}
+                </span>
+                {teamGroups[activeTeam.id] && (
+                  <span className="text-[10px] font-bold text-white/40">
+                    المجموعة {teamGroups[activeTeam.id]}
+                  </span>
+                )}
+                <span className="text-white/20">·</span>
+                <span className="text-[10px] text-white/45 font-bold">
+                  {activeTeam.players.length} لاعب
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Body / Players List */}
+            <div className="overflow-y-auto p-4 space-y-1 flex-1 max-h-[55vh] custom-scrollbar">
+              {activeTeam.players.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-white/25 text-xs font-bold">لا يوجد لاعبون مسجلون في هذا الفريق بعد</p>
+                </div>
+              ) : (
+                <>
+                  {/* Table Column Headers */}
+                  <div
+                    className="px-3 py-2 grid text-[9px] font-black text-white/25 tracking-widest uppercase items-center"
+                    style={{ gridTemplateColumns: "36px 1fr 60px 80px" }}
+                  >
+                    <span className="text-center">الرقم</span>
+                    <span>الاسم</span>
+                    <span className="text-center">الأهداف</span>
+                    <span className="text-left pl-2">المركز</span>
+                  </div>
+
+                  {/* Player Rows */}
+                  {activeTeam.players.map((player: TeamWithPlayers["players"][number], idx: number) => (
+                    <div
+                      key={player.id}
+                      className="px-3 py-2 grid items-center hover:bg-white/[0.02] rounded-xl transition-colors duration-200"
+                      style={{
+                        gridTemplateColumns: "36px 1fr 60px 80px",
+                        borderBottom: idx < activeTeam.players.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
+                      }}
+                    >
+                      {/* Jersey Number */}
+                      <div className="flex justify-center">
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black score-number"
+                          style={{
+                            background: "rgba(255,255,255,0.04)",
+                            color: "rgba(255,255,255,0.55)",
+                            border: "1px solid rgba(255,255,255,0.06)"
+                          }}
+                        >
+                          {player.jerseyNumber ?? "—"}
+                        </div>
+                      </div>
+
+                      {/* Name */}
+                      <span className="text-xs font-bold text-white/85 pr-2 truncate">{cleanPlayerName(player.name)}</span>
+
+                      {/* Goals Count Column */}
+                      <div className="flex justify-center">
+                        {(player.goalsCount ?? 0) > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-[10px] font-black text-green-400 score-number">
+                            ⚽ {player.goalsCount}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-white/10 font-bold">—</span>
+                        )}
+                      </div>
+
+                      {/* Position */}
+                      <div className="flex justify-end">
+                        {player.position ? (
+                          <span
+                            className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              color: getPositionColor(player.position),
+                              background: `${getPositionColor(player.position).replace("0.9", "0.12")}`,
+                              border: `1px solid ${getPositionColor(player.position).replace("0.9", "0.25")}`,
+                            }}
+                          >
+                            {getPositionLabel(player.position)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-white/15 pl-4 font-bold">—</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+
 // ─── Tab 3: Top Scorers ───────────────────────────────────────────────────────
 
 function TopScorersTab({ data }: { data: StandingsData }) {
   const scorers = data.topScorers;
-  const maxGoals = scorers[0]?.goals ?? 1;
 
   if (scorers.length === 0) {
     return (
@@ -445,38 +630,50 @@ function TopScorersTab({ data }: { data: StandingsData }) {
   }
 
   const podiumColors = [
-    { bg: "rgba(201,151,26,0.18)", border: "rgba(201,151,26,0.55)", text: "#F0C040", label: "🥇" },
-    { bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.4)", text: "#94a3b8", label: "🥈" },
-    { bg: "rgba(180,100,40,0.12)", border: "rgba(180,100,40,0.4)", text: "#b47030", label: "🥉" },
+    { bg: "linear-gradient(135deg, rgba(201,151,26,0.18) 0%, rgba(201,151,26,0.05) 100%)", border: "rgba(201,151,26,0.6)", text: "#F0C040", label: "🥇", heightClass: "py-7 sm:py-9 scale-105 z-10 border-2" },
+    { bg: "linear-gradient(135deg, rgba(148,163,184,0.12) 0%, rgba(148,163,184,0.03) 100%)", border: "rgba(148,163,184,0.4)", text: "#94a3b8", label: "🥈", heightClass: "py-5 sm:py-6 mt-4 border" },
+    { bg: "linear-gradient(135deg, rgba(180,100,40,0.12) 0%, rgba(180,100,40,0.03) 100%)", border: "rgba(180,100,40,0.4)", text: "#b47030", label: "🥉", heightClass: "py-4 sm:py-5 mt-6 border" },
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Podium cards for top 3 */}
+    <div className="space-y-5">
+      {/* Dynamic Podium for Top 3 */}
       {scorers.length >= 3 && (
-        <div className="grid grid-cols-3 gap-2 animate-fade-in-up">
-          {[1, 0, 2].map((realIdx, displayIdx) => {
+        <div className="grid grid-cols-3 gap-2.5 items-end px-1.5 py-4 animate-fade-in-up relative">
+          {[1, 0, 2].map((realIdx) => {
             const scorer = scorers[realIdx];
             if (!scorer) return null;
-            const colors = podiumColors[realIdx];
-            const heights = [80, 100, 64]; // visual heights of podium bars
-            const podiumHeight = heights[displayIdx];
+            const config = podiumColors[realIdx];
             return (
               <div
                 key={scorer.playerId}
-                className="flex flex-col items-center gap-1.5 rounded-2xl p-3"
-                style={{ background: colors.bg, border: `1px solid ${colors.border}` }}
+                className={`flex flex-col items-center gap-2 rounded-2xl text-center relative transition-all duration-300 ${config.heightClass}`}
+                style={{ background: config.bg, borderColor: config.border }}
               >
-                <span className="text-xl leading-none">{colors.label}</span>
+                {/* Crown glow for 1st place */}
+                {realIdx === 0 && (
+                  <div className="absolute -top-4 w-10 h-10 bg-[#C9971A]/30 blur-xl rounded-full pointer-events-none" />
+                )}
+                
+                <span className="text-2xl leading-none filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">{config.label}</span>
+                
                 <TeamAvatar name={scorer.teamName} logoUrl={scorer.logoUrl} size="sm" />
-                <p className="text-[10px] font-black text-white/90 text-center leading-tight">{scorer.playerName}</p>
-                <p className="text-[9px] text-white/35 font-semibold text-center truncate w-full">{scorer.teamName}</p>
+                
+                <div className="min-w-0 px-1 mt-0.5">
+                  <p className="text-[11px] font-black text-white/90 truncate max-w-full leading-tight">
+                    {cleanPlayerName(scorer.playerName)}
+                  </p>
+                  <p className="text-[9px] text-white/35 font-bold truncate max-w-full mt-0.5">
+                    {scorer.teamName}
+                  </p>
+                </div>
+                
                 <div
-                  className="font-black score-number text-center"
-                  style={{ color: colors.text, fontSize: realIdx === 0 ? 22 : 18 }}
+                  className="font-black score-number text-center mt-1.5 flex items-baseline gap-0.5"
+                  style={{ color: config.text }}
                 >
-                  {scorer.goals}
-                  <span className="text-[9px] font-bold text-white/30 mr-0.5">هدف</span>
+                  <span className="text-xl sm:text-2xl">{scorer.goals}</span>
+                  <span className="text-[9px] font-bold text-white/30">أهداف</span>
                 </div>
               </div>
             );
@@ -484,78 +681,66 @@ function TopScorersTab({ data }: { data: StandingsData }) {
         </div>
       )}
 
-      {/* Full list */}
+      {/* Scorers List */}
       <div className="glass-card rounded-2xl overflow-hidden animate-fade-in-up" style={{ animationDelay: "60ms" }}>
         {/* Header */}
         <div
-          className="px-4 py-2.5 grid text-[9px] font-black text-white/20 tracking-widest uppercase items-center"
-          style={{ gridTemplateColumns: "24px 1fr auto 80px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          className="px-4 py-3 grid text-[9px] font-black text-white/25 tracking-widest uppercase items-center"
+          style={{ gridTemplateColumns: "36px 1fr 120px 60px" }}
         >
-          <span className="text-center">#</span>
+          <span className="text-center">الترتيب</span>
           <span>اللاعب</span>
-          <span className="text-center pl-2">الأهداف</span>
-          <span className="text-center">النسبة</span>
+          <span>الفريق</span>
+          <span className="text-center">الأهداف</span>
         </div>
 
         {scorers.map((scorer, idx) => {
-          const barPct = (scorer.goals / maxGoals) * 100;
-          const colors = podiumColors[idx] ?? { text: "rgba(255,255,255,0.55)" };
+          const isTop3 = idx < 3;
+          const config = podiumColors[idx] ?? { text: "rgba(255,255,255,0.65)" };
 
           return (
             <div
               key={scorer.playerId}
-              className="px-4 py-3 grid items-center hover:bg-white/[0.02] transition-colors duration-200"
+              className="px-4 py-3.5 grid items-center hover:bg-white/[0.02] transition-colors duration-200"
               style={{
-                gridTemplateColumns: "24px 1fr auto 80px",
-                borderBottom: idx < scorers.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                gridTemplateColumns: "36px 1fr 120px 60px",
+                borderBottom: idx < scorers.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
               }}
             >
               {/* Rank */}
-              <span
-                className="text-xs font-black text-center score-number"
-                style={{ color: idx < 3 ? colors.text : "rgba(255,255,255,0.2)" }}
-              >
-                {idx + 1}
-              </span>
+              <div className="flex justify-center">
+                {isTop3 ? (
+                  <span className="text-lg leading-none">{config.label}</span>
+                ) : (
+                  <span className="text-xs font-black text-white/20 score-number">
+                    {idx + 1}
+                  </span>
+                )}
+              </div>
 
-              {/* Player + Team */}
+              {/* Player Name */}
+              <div className="min-w-0 pr-2">
+                <p className="text-xs font-bold text-white/90 truncate">{cleanPlayerName(scorer.playerName)}</p>
+                <p className="text-[9px] text-white/30 font-semibold mt-0.5">لاعب مسجل</p>
+              </div>
+
+              {/* Team Info */}
               <div className="flex items-center gap-2 min-w-0">
                 <TeamAvatar name={scorer.teamName} logoUrl={scorer.logoUrl} size="sm" />
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-white/90 truncate">{scorer.playerName}</p>
-                  <p className="text-[9px] text-white/30 font-semibold truncate">{scorer.teamName}</p>
-                </div>
+                <span className="text-xs font-bold text-white/70 truncate">{scorer.teamName}</span>
               </div>
 
               {/* Goals count */}
-              <div className="flex items-center justify-center pr-3">
+              <div className="flex items-center justify-center">
                 <span
-                  className="text-sm font-black score-number"
-                  style={{ color: idx < 3 ? colors.text : "rgba(255,255,255,0.7)" }}
+                  className="text-sm font-black score-number px-2.5 py-1 rounded-lg"
+                  style={{
+                    color: isTop3 ? config.text : "rgba(255,255,255,0.85)",
+                    background: isTop3 ? `${config.border.replace("0.6", "0.08").replace("0.4", "0.05")}` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${isTop3 ? config.border.replace("0.6", "0.15").replace("0.4", "0.1") : "rgba(255,255,255,0.05)"}`
+                  }}
                 >
                   {scorer.goals}
-                </span>
-              </div>
-
-              {/* Bar */}
-              <div className="flex items-center gap-1.5">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${barPct}%`,
-                      background: idx === 0
-                        ? "linear-gradient(to right, #F0C040, #C9971A)"
-                        : idx === 1
-                        ? "linear-gradient(to right, #94a3b8, #64748b)"
-                        : idx === 2
-                        ? "linear-gradient(to right, #b47030, #8b5020)"
-                        : "rgba(255,255,255,0.3)",
-                    }}
-                  />
-                </div>
-                <span className="text-[9px] font-bold text-white/25 score-number w-8 text-right">
-                  {Math.round(barPct)}%
                 </span>
               </div>
             </div>
@@ -600,7 +785,7 @@ export default function StandingsClient({ data }: { data: StandingsData }) {
 
       {/* ── Tab Content ── */}
       {activeTab === "standings" && <StandingsTab data={data} />}
-      {activeTab === "teams" && <TeamsTab teams={data.teams} />}
+      {activeTab === "teams" && <TeamsTab teams={data.teams} standings={data.standings} />}
       {activeTab === "scorers" && <TopScorersTab data={data} />}
     </div>
   );

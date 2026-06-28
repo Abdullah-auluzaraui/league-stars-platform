@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Calendar, Trophy, BarChart2 } from 'lucide-react';
+import { Home, Calendar, BarChart2, ThumbsUp } from 'lucide-react';
 
 export function DesktopNav() {
   const pathname = usePathname();
@@ -11,6 +11,7 @@ export function DesktopNav() {
     { href: '/', label: 'الرئيسية' },
     { href: '/matches', label: 'المباريات' },
     { href: '/standings', label: 'المنافسات' },
+    { href: '/votes', label: 'هدف الجولة' },
   ];
 
   return (
@@ -42,6 +43,7 @@ export function MobileNav() {
     { href: '/', label: 'الرئيسية', Icon: Home },
     { href: '/matches', label: 'المباريات', Icon: Calendar },
     { href: '/standings', label: 'المنافسات', Icon: BarChart2 },
+    { href: '/votes', label: 'هدف الجولة', Icon: ThumbsUp },
   ];
 
   return (
