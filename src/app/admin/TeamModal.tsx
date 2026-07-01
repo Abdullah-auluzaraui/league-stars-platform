@@ -264,7 +264,7 @@ export default function TeamModal({
             <input
               type="text"
               required
-              placeholder="مثال: النسور"
+              placeholder="مثال: اسم الفريق"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 focus:bg-white/6 transition-all"
@@ -275,7 +275,7 @@ export default function TeamModal({
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-white/50 flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-[#F0C040]" />
-              <span>شعار الفريق (من الجهاز أو رابط ويب)</span>
+              <span>شعار الفريق</span>
             </label>
             
             <input
@@ -324,17 +324,6 @@ export default function TeamModal({
                 )}
               </div>
             </div>
-
-            {/* بديل نصي (إذا كان المشرف يفضل وضع رابط ويب جاهز) */}
-            {!filePreview && (
-              <input
-                type="text"
-                placeholder="أو أدخل رابط ويب للشعار هنا مباشرة..."
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                className="w-full px-4 py-2 bg-white/3 border border-white/6 rounded-xl text-white text-[10px] font-semibold focus:outline-none focus:border-[#C9971A]/40 transition-all mt-1"
-              />
-            )}
           </div>
 
           {/* القائمة المنسدلة المحسنة (الربط ببطولة) */}

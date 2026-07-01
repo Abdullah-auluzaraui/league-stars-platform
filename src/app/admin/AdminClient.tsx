@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -26,9 +26,11 @@ import {
   AlertCircle,
   Archive,
   ArchiveRestore,
+  Search,
 } from 'lucide-react';
 import TournamentModal from './TournamentModal';
 import TeamModal from './TeamModal';
+import PlayerModal from './PlayerModal';
 import ConfirmModal from './ConfirmModal';
 import {
   getTournaments,
@@ -42,8 +44,12 @@ import {
   unarchiveTeam,
   deleteTeam,
 } from './teamActions';
+import {
+  getPlayers,
+  deletePlayer,
+} from './playerActions';
 
-// ─── Types (واجهات البيانات الوهمية) ─────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────
 
 type TabId = 'overview' | 'tournaments' | 'teams' | 'players' | 'matches' | 'voting';
 
@@ -64,52 +70,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'voting',       label: 'التصويت',           icon: Star            },
 ];
 
-// ─── Mock Stats ───────────────────────────────────────────────────────────────
-
-const STATS = [
-  { label: 'البطولات',    value: '3',    icon: Trophy,    color: 'from-[#C9971A]/20 to-[#C9971A]/5',  border: 'border-[#C9971A]/20',  text: 'text-[#F0C040]' },
-  { label: 'الفرق',       value: '12',   icon: Shield,    color: 'from-[#5C131F]/20 to-[#5C131F]/5',  border: 'border-[#5C131F]/30',  text: 'text-red-300'   },
-  { label: 'اللاعبون',   value: '148',  icon: Users,     color: 'from-white/10 to-white/3',            border: 'border-white/10',       text: 'text-white'     },
-  { label: 'الأصوات',    value: '4.2k', icon: BarChart3, color: 'from-purple-500/15 to-purple-500/3', border: 'border-purple-500/20', text: 'text-purple-300'},
-];
-
-// ─── Mock Tournaments ─────────────────────────────────────────────────────────
-
-const MOCK_TOURNAMENTS = [
-  { id: '1', name: 'دوري الفرسان الربيعي',    type: 'group_stage', status: 'active',    groups: 2, qualifiers: 2 },
-  { id: '2', name: 'كأس النجوم الصيفية',       type: 'knockout',    status: 'upcoming',  groups: 1, qualifiers: 1 },
-  { id: '3', name: 'بطولة الشتاء التاريخية',   type: 'group_stage', status: 'completed', groups: 3, qualifiers: 2 },
-];
-
-// ─── Mock Teams ───────────────────────────────────────────────────────────────
-
-const MOCK_TEAMS = [
-  { id: '1', name: 'فرسان نجد',    group: 'A', tournament: 'دوري الفرسان الربيعي'  },
-  { id: '2', name: 'صقور الرياض', group: 'A', tournament: 'دوري الفرسان الربيعي'  },
-  { id: '3', name: 'أسود القصيم', group: 'B', tournament: 'دوري الفرسان الربيعي'  },
-  { id: '4', name: 'نجوم الجنوب', group: 'B', tournament: 'دوري الفرسان الربيعي'  },
-  { id: '5', name: 'نمور المنطقة', group: '-', tournament: 'كأس النجوم الصيفية'    },
-  { id: '6', name: 'عقبان الغرب',  group: '-', tournament: 'كأس النجوم الصيفية'    },
-];
-
-// ─── Mock Players ─────────────────────────────────────────────────────────────
-
-const MOCK_PLAYERS = [
-  { id: '1', name: 'محمد السهلاوي', team: 'فرسان نجد',    jersey: 9,  position: 'مهاجم'    },
-  { id: '2', name: 'ياسر القحطاني', team: 'صقور الرياض',  jersey: 10, position: 'وسط'      },
-  { id: '3', name: 'عمر الشمراني',  team: 'أسود القصيم',  jersey: 7,  position: 'وسط'      },
-  { id: '4', name: 'خالد البلوي',   team: 'نجوم الجنوب',  jersey: 1,  position: 'حارس مرمى'},
-  { id: '5', name: 'أحمد الدوسري',  team: 'فرسان نجد',    jersey: 5,  position: 'مدافع'    },
-  { id: '6', name: 'تركي الغامدي',  team: 'صقور الرياض',  jersey: 11, position: 'مهاجم'    },
-];
-
-// ─── Mock Matches ─────────────────────────────────────────────────────────────
-
-const MOCK_MATCHES = [
-  { id: '1', home: 'فرسان نجد',    away: 'صقور الرياض', homeScore: 2, awayScore: 1, status: 'finished', stage: 'دور المجموعات - أ' },
-  { id: '2', home: 'أسود القصيم', away: 'نجوم الجنوب', homeScore: 0, awayScore: 0, status: 'live',     stage: 'دور المجموعات - ب' },
-  { id: '3', home: 'فرسان نجد',    away: 'أسود القصيم', homeScore: null, awayScore: null, status: 'scheduled', stage: 'دور المجموعات' },
-];
 
 // ─── Helper: Status Badge ─────────────────────────────────────────────────────
 
@@ -157,17 +117,18 @@ function SectionHeader({ title, subtitle, onAdd }: { title: string; subtitle: st
 interface OverviewTabProps {
   tournamentsCount: number;
   teamsCount: number;
+  playersCount: number;
 }
 
-function OverviewTab({ tournamentsCount, teamsCount }: OverviewTabProps) {
+function OverviewTab({ tournamentsCount, teamsCount, playersCount }: OverviewTabProps) {
   const stats = [
-    { label: 'البطولات',    value: String(tournamentsCount),    icon: Trophy,    color: 'from-[#C9971A]/20 to-[#C9971A]/5',  border: 'border-[#C9971A]/20',  text: 'text-[#F0C040]' },
-    ...STATS.slice(1),
+    { label: 'البطولات', value: String(tournamentsCount), icon: Trophy, color: 'from-[#C9971A]/20 to-[#C9971A]/5', border: 'border-[#C9971A]/20', text: 'text-[#F0C040]' },
+    { label: 'الفرق', value: String(teamsCount), icon: Shield, color: 'from-[#5C131F]/20 to-[#5C131F]/5', border: 'border-[#5C131F]/30', text: 'text-red-300' },
+    { label: 'اللاعبون', value: String(playersCount), icon: Users, color: 'from-white/10 to-white/3', border: 'border-white/10', text: 'text-white' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((s, i) => {
           const Icon = s.icon;
@@ -186,9 +147,7 @@ function OverviewTab({ tournamentsCount, teamsCount }: OverviewTabProps) {
         })}
       </div>
 
-      {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Quick Actions */}
         <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-white mb-1">إجراءات سريعة</h3>
@@ -214,35 +173,17 @@ function OverviewTab({ tournamentsCount, teamsCount }: OverviewTabProps) {
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div className="glass-card rounded-2xl p-4 sm:p-5">
           <h3 className="text-xs sm:text-sm font-bold text-white mb-1">النشاط الأخير</h3>
           <p className="text-[10px] sm:text-xs text-white/35 mb-4">آخر العمليات والمجريات في النظام</p>
-
-          <div className="space-y-3">
-            {[
-              { action: 'بدء مباراة مباشر', detail: 'أسود القصيم ضد نجوم الجنوب', time: 'منذ دقيقة', color: 'bg-red-500' },
-              { action: 'نتيجة مباراة', detail: 'فرسان نجد 2 - 1 صقور الرياض', time: 'قبل ساعة', color: 'bg-[#C9971A]' },
-              { action: 'بطولة جديدة', detail: 'كأس النجوم الصيفية', time: 'أمس', color: 'bg-blue-500' },
-            ].map((a, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className={`w-1.5 h-1.5 ${a.color} rounded-full mt-1.5 flex-shrink-0`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white/80">{a.action}</p>
-                  <p className="text-[10px] text-white/40 truncate">{a.detail}</p>
-                </div>
-                <p className="text-[10px] text-white/25 flex-shrink-0">{a.time}</p>
-              </div>
-            ))}
+          <div className="flex items-center justify-center min-h-[112px] rounded-xl border border-dashed border-white/8 bg-white/2 text-xs font-semibold text-white/25">
+            لا توجد عمليات حديثة مسجلة.
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Tournaments Tab ──────────────────────────────────────────────────────────
-
 interface TournamentsTabProps {
   tournaments: any[];
   isLoading: boolean;
@@ -606,109 +547,304 @@ function TeamsTab({
 // ─── Players Tab ──────────────────────────────────────────────────────────────
 
 const POSITION_COLORS: Record<string, string> = {
-  'مهاجم': 'text-red-300 bg-red-500/10 border-red-500/20',
-  'وسط': 'text-blue-300 bg-blue-500/10 border-blue-500/20',
-  'مدافع': 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20',
-  'حارس مرمى': 'text-amber-300 bg-amber-500/10 border-amber-500/20',
+  forward: 'text-red-300 bg-red-500/10 border-red-500/20',
+  midfielder: 'text-blue-300 bg-blue-500/10 border-blue-500/20',
+  defender: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20',
+  goalkeeper: 'text-amber-300 bg-amber-500/10 border-amber-500/20',
 };
 
-function PlayersTab() {
+const POSITION_LABELS: Record<string, string> = {
+  goalkeeper: 'حارس مرمى',
+  defender: 'مدافع',
+  midfielder: 'وسط',
+  forward: 'مهاجم',
+};
+
+type AdminTeamOption = {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  archivedAt?: Date | string | null;
+};
+
+type AdminPlayer = {
+  id: string;
+  name: string;
+  teamId: string;
+  jerseyNumber: number | null;
+  position: string | null;
+  photoUrl: string | null;
+  team?: AdminTeamOption | null;
+  _count?: {
+    goals: number;
+    cards: number;
+  };
+};
+
+interface PlayersTabProps {
+  players: AdminPlayer[];
+  teams: AdminTeamOption[];
+  loading: boolean;
+  includeArchivedTeams: boolean;
+  setIncludeArchivedTeams: (val: boolean) => void;
+  onAdd: () => void;
+  onEdit: (player: AdminPlayer) => void;
+  onDelete: (id: string) => void;
+}
+
+function PlayerAvatar({ player }: { player: AdminPlayer }) {
+  if (player.photoUrl) {
+    return (
+      <img
+        src={player.photoUrl}
+        alt={player.name}
+        className="w-8 h-8 rounded-full object-cover bg-white/5 border border-white/8 flex-shrink-0"
+      />
+    );
+  }
+
+  return (
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/10 to-white/3 flex items-center justify-center flex-shrink-0">
+      <UserCircle className="w-4 h-4 text-white/35" />
+    </div>
+  );
+}
+
+function PositionBadge({ position }: { position?: string | null }) {
+  if (!position) {
+    return (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border text-white/35 bg-white/5 border-white/10 whitespace-nowrap">
+        غير محدد
+      </span>
+    );
+  }
+
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${POSITION_COLORS[position] ?? 'text-white/40 bg-white/5 border-white/10'}`}>
+      {POSITION_LABELS[position] ?? position}
+    </span>
+  );
+}
+
+function PlayersTab({
+  players,
+  teams,
+  loading,
+  includeArchivedTeams,
+  setIncludeArchivedTeams,
+  onAdd,
+  onEdit,
+  onDelete,
+}: PlayersTabProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [teamFilter, setTeamFilter] = useState('all');
+  const [positionFilter, setPositionFilter] = useState('all');
+
+  const filteredPlayers = players.filter((player) => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !normalizedSearch ||
+      player.name.toLowerCase().includes(normalizedSearch) ||
+      player.team?.name?.toLowerCase().includes(normalizedSearch) ||
+      String(player.jerseyNumber ?? '').includes(normalizedSearch);
+    const matchesTeam = teamFilter === 'all' || player.teamId === teamFilter;
+    const matchesPosition = positionFilter === 'all' || player.position === positionFilter;
+
+    return matchesSearch && matchesTeam && matchesPosition;
+  });
+
+  const teamsWithPlayers = teams.filter((team) =>
+    players.some((player) => player.teamId === team.id)
+  );
+
   return (
     <div className="animate-fade-in-up">
       <SectionHeader
         title="اللاعبون"
-        subtitle="سجل اللاعبين المشاركين في البطولات"
-        onAdd={() => {}}
+        subtitle="إدارة بيانات اللاعبين وربطهم بالفرق"
+        onAdd={onAdd}
       />
 
-      {/* 1. Mobile View (Cards) */}
-      <div className="block md:hidden space-y-3">
-        {MOCK_PLAYERS.map((p, i) => (
-          <div
-            key={p.id}
-            className="glass-card rounded-xl p-4 flex flex-col gap-3 animate-fade-in-up"
-            style={{ animationDelay: `${i * 40}ms` }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-full bg-[#C9971A]/10 border border-[#C9971A]/20 text-[#F0C040] text-xs font-black flex items-center justify-center flex-shrink-0">
-                  {p.jersey}
-                </div>
-                <div className="min-w-0">
-                  <span className="text-sm font-bold text-white block truncate">{p.name}</span>
-                  <span className="text-[10px] text-white/40 block truncate">{p.team}</span>
-                </div>
-              </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md border flex-shrink-0 ${POSITION_COLORS[p.position] ?? 'text-white/40 bg-white/5 border-white/10'}`}>
-                {p.position}
-              </span>
-            </div>
-            <div className="border-t border-white/5 pt-2 flex items-center justify-end gap-1.5">
-              <button className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mb-4 bg-white/3 border border-white/5 p-3 rounded-2xl">
+        <div className="relative">
+          <Search className="w-4 h-4 text-white/25 absolute right-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="بحث باسم اللاعب أو الفريق أو الرقم"
+            className="w-full pr-9 pl-3 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/50 transition-all"
+          />
+        </div>
 
-      {/* 2. Desktop View (Table) */}
-      <div className="hidden md:block glass-card rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr className="border-b border-white/6">
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">اللاعب</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">رقم</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">المركز</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/4">
-              {MOCK_PLAYERS.map((p, i) => (
-                <tr
-                  key={p.id}
-                  className="hover:bg-white/3 transition-colors"
-                >
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/10 to-white/3 flex items-center justify-center flex-shrink-0">
-                        <UserCircle className="w-4 h-4 text-white/35" />
-                      </div>
-                      <span className="text-sm font-bold text-white whitespace-nowrap">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <span className="text-xs text-white/45 whitespace-nowrap">{p.team}</span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
-                    <span className="text-xs font-black text-white whitespace-nowrap">{p.jersey}</span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${POSITION_COLORS[p.position] ?? 'text-white/40 bg-white/5 border-white/10'}`}>
-                      {p.position}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                      <button className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select
+            value={teamFilter}
+            onChange={(e) => setTeamFilter(e.target.value)}
+            className="min-w-36 px-3 py-2.5 bg-[#14141a] border border-white/8 rounded-xl text-white/75 text-xs font-bold focus:outline-none focus:border-[#C9971A]/50"
+          >
+            <option value="all">كل الفرق</option>
+            {teamsWithPlayers.map((team) => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={positionFilter}
+            onChange={(e) => setPositionFilter(e.target.value)}
+            className="min-w-32 px-3 py-2.5 bg-[#14141a] border border-white/8 rounded-xl text-white/75 text-xs font-bold focus:outline-none focus:border-[#C9971A]/50"
+          >
+            <option value="all">كل المراكز</option>
+            {Object.entries(POSITION_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setIncludeArchivedTeams(!includeArchivedTeams)}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border whitespace-nowrap ${
+              includeArchivedTeams
+                ? 'bg-[#C9971A]/10 border-[#C9971A]/20 text-[#F0C040]'
+                : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/6 hover:text-white'
+            }`}
+          >
+            {includeArchivedTeams ? 'إخفاء لاعبي الفرق المؤرشفة' : 'عرض لاعبي الفرق المؤرشفة'}
+          </button>
         </div>
       </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="w-8 h-8 text-[#F0C040] animate-spin" />
+          <span className="text-xs text-white/30 font-semibold">جاري تحميل قائمة اللاعبين...</span>
+        </div>
+      ) : players.length === 0 ? (
+        <div className="text-center py-16 bg-[#121018]/40 border border-white/5 rounded-2xl">
+          <UserCircle className="w-10 h-10 text-white/10 mx-auto mb-2.5" />
+          <p className="text-xs text-white/30 font-semibold">لا يوجد لاعبون مسجلون حالياً. أضف لاعباً جديداً للبدء!</p>
+        </div>
+      ) : filteredPlayers.length === 0 ? (
+        <div className="text-center py-12 bg-[#121018]/40 border border-white/5 rounded-2xl">
+          <Search className="w-9 h-9 text-white/10 mx-auto mb-2.5" />
+          <p className="text-xs text-white/30 font-semibold">لا توجد نتائج مطابقة للفلاتر الحالية</p>
+        </div>
+      ) : (
+        <>
+          <div className="block md:hidden space-y-3">
+            {filteredPlayers.map((player, i) => (
+              <div
+                key={player.id}
+                className="glass-card rounded-xl p-4 flex flex-col gap-3 animate-fade-in-up"
+                style={{ animationDelay: `${i * 35}ms` }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <PlayerAvatar player={player} />
+                    <div className="min-w-0">
+                      <span className="text-sm font-bold text-white block truncate">{player.name}</span>
+                      <span className="text-[10px] text-white/40 block truncate">{player.team?.name}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="min-w-7 h-7 px-2 rounded-full bg-[#C9971A]/10 border border-[#C9971A]/20 text-[#F0C040] text-xs font-black flex items-center justify-center">
+                      {player.jerseyNumber ?? '-'}
+                    </span>
+                    <PositionBadge position={player.position} />
+                  </div>
+                </div>
+                <div className="border-t border-white/5 pt-2 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-white/30 font-semibold">
+                    {player._count?.goals ?? 0} هدف · {player._count?.cards ?? 0} بطاقة
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onEdit(player)}
+                      className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(player.id)}
+                      className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block glass-card rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-white/6">
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">اللاعب</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">الرقم</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">المركز</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">السجل</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/4">
+                  {filteredPlayers.map((player) => {
+                    const isArchivedTeam = !!player.team?.archivedAt;
+                    return (
+                      <tr
+                        key={player.id}
+                        className={`hover:bg-white/3 transition-colors ${isArchivedTeam ? 'opacity-50 bg-white/1' : ''}`}
+                      >
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <div className="flex items-center gap-3">
+                            <PlayerAvatar player={player} />
+                            <span className="text-sm font-bold text-white whitespace-nowrap">{player.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <span className="text-xs text-white/45 whitespace-nowrap">{player.team?.name ?? '-'}</span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
+                          <span className="text-xs font-black text-white whitespace-nowrap">{player.jerseyNumber ?? '-'}</span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <PositionBadge position={player.position} />
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
+                          <span className="text-[10px] text-white/35 font-bold whitespace-nowrap">
+                            {player._count?.goals ?? 0} هدف · {player._count?.cards ?? 0} بطاقة
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => onEdit(player)}
+                              className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              type="button"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onDelete(player.id)}
+                              className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                              type="button"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -723,59 +859,13 @@ function MatchesTab() {
         subtitle="إدارة الجدول وإدخال النتائج"
         onAdd={() => {}}
       />
-      <div className="space-y-3">
-        {MOCK_MATCHES.map((m, i) => (
-          <div
-            key={m.id}
-            className={`glass-card rounded-2xl p-4 sm:p-5 animate-fade-in-up ${m.status === 'live' ? 'border-red-500/20' : ''}`}
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className="flex flex-col gap-3">
-              {/* Match row (Teams & Score) */}
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs sm:text-sm font-bold text-white text-right flex-1 truncate">{m.home}</span>
-                <div className="flex-shrink-0 mx-1">
-                  {m.homeScore !== null ? (
-                    <span className="text-xs sm:text-sm font-black text-white bg-white/8 rounded-lg px-2.5 py-1 min-w-[48px] sm:min-w-[56px] text-center inline-block">
-                      {m.homeScore} - {m.awayScore}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] sm:text-xs font-bold text-white/25 bg-white/4 rounded-lg px-2.5 py-1 min-w-[48px] sm:min-w-[56px] text-center inline-block">
-                      VS
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs sm:text-sm font-bold text-white text-left flex-1 truncate text-left">{m.away}</span>
-              </div>
-
-              {/* Stage & Status/Actions */}
-              <div className="flex items-center justify-between mt-1 pt-2 border-t border-white/5 text-[11px] gap-2">
-                <span className="text-white/30 font-semibold truncate max-w-[120px] sm:max-w-none">{m.stage}</span>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <StatusBadge status={m.status} />
-                  {m.status === 'live' && (
-                    <button className="flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer whitespace-nowrap">
-                      <Tv2 className="w-3.5 h-3.5" />
-                      إدارة
-                    </button>
-                  )}
-                  {m.status === 'scheduled' && (
-                    <button className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg hover:bg-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap">
-                      <Play className="w-3.5 h-3.5" />
-                      بدء
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center">
+        <Swords className="w-10 h-10 text-white/15 mx-auto mb-2" />
+        <p className="text-xs font-semibold text-white/30">لا توجد مباريات مسجلة حالياً.</p>
       </div>
     </div>
   );
 }
-
-// ─── Voting Tab ───────────────────────────────────────────────────────────────
 
 function VotingTab() {
   return (
@@ -785,56 +875,9 @@ function VotingTab() {
         subtitle="إدارة وتفعيل تصويت الجمهور لأفضل هدف"
         onAdd={() => {}}
       />
-
-      {/* Active Session Card */}
-      <div className="glass-card-gold rounded-2xl p-4 sm:p-5 mb-4 animate-fade-in-up">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Star className="w-4 h-4 text-[#F0C040]" />
-              <span className="text-xs sm:text-sm font-bold text-white">تصويت الجولة · الجولة العاشرة</span>
-            </div>
-            <p className="text-[10px] sm:text-xs text-white/45">3 أهداف مرشحة · 412 صوت إجمالي</p>
-          </div>
-          <div className="flex items-center gap-2 mt-1 sm:mt-0">
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap">نشطة</span>
-            <button className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
-              <StopCircle className="w-3 h-3" />
-              إغلاق
-            </button>
-          </div>
-        </div>
-
-        {/* Nominated Goals */}
-        <div className="space-y-2">
-          {[
-            { player: 'محمد السهلاوي', team: 'فرسان نجد',   votes: 210, pct: 51 },
-            { player: 'ياسر القحطاني', team: 'صقور الرياض', votes: 142, pct: 34 },
-            { player: 'عمر الشمراني',  team: 'أسود القصيم', votes: 60,  pct: 15 },
-          ].map((g, i) => (
-            <div key={i} className="bg-white/4 rounded-xl p-3">
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <div className="min-w-0 flex items-baseline">
-                  <span className="text-xs font-bold text-white truncate">{g.player}</span>
-                  <span className="text-[9px] sm:text-[10px] text-white/40 mr-1.5 truncate">· {g.team}</span>
-                </div>
-                <span className="text-xs font-bold text-[#F0C040] flex-shrink-0">{g.votes} صوت</span>
-              </div>
-              <div className="h-1.5 bg-white/6 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-l from-[#F0C040] to-[#C9971A] rounded-full"
-                  style={{ width: `${g.pct}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* No active session placeholder hint */}
-      <div className="glass-card rounded-2xl p-5 border-dashed border-white/10 text-center animate-fade-in-up animate-delay-200">
+      <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
         <Medal className="w-8 h-8 text-white/15 mx-auto mb-2" />
-        <p className="text-xs text-white/30 font-semibold">ابدأ جلسة تصويت جديدة عبر ترشيح أهداف من قاعدة البيانات</p>
+        <p className="text-xs font-semibold text-white/30">لا توجد جلسات تصويت نشطة حالياً.</p>
       </div>
     </div>
   );
@@ -844,7 +887,6 @@ export default function AdminClient({ username }: { username: string }) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // --- حالات البطولات وقاعدة البيانات ---
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [tournamentsLoading, setTournamentsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -861,6 +903,15 @@ export default function AdminClient({ username }: { username: string }) {
   // حالات نافذة التحكم بالفرق
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
+
+  // --- حالات اللاعبين وقاعدة البيانات ---
+  const [players, setPlayers] = useState<AdminPlayer[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(true);
+  const [includeArchivedPlayerTeams, setIncludeArchivedPlayerTeams] = useState(false);
+
+  // حالات نافذة التحكم باللاعبين
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<AdminPlayer | null>(null);
 
   // إعدادات نافذة التأكيد المخصصة (Confirm Modal)
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -918,6 +969,20 @@ export default function AdminClient({ username }: { username: string }) {
     }
   };
 
+  // جلب اللاعبين من السيرفر
+  const fetchPlayers = async () => {
+    try {
+      setPlayersLoading(true);
+      const data = await getPlayers(includeArchivedPlayerTeams);
+      setPlayers(data);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل قائمة اللاعبين', 'error');
+    } finally {
+      setPlayersLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTournaments();
   }, []);
@@ -925,6 +990,10 @@ export default function AdminClient({ username }: { username: string }) {
   useEffect(() => {
     fetchTeams();
   }, [showArchived]);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, [includeArchivedPlayerTeams]);
 
   // إضافة وتعديل
   const handleAddTournament = () => {
@@ -1020,6 +1089,41 @@ export default function AdminClient({ username }: { username: string }) {
     setIsTeamModalOpen(true);
   };
 
+  // إضافة وتعديل لاعب
+  const handleAddPlayer = () => {
+    setSelectedPlayer(null);
+    setIsPlayerModalOpen(true);
+  };
+
+  const handleEditPlayer = (player: AdminPlayer) => {
+    setSelectedPlayer(player);
+    setIsPlayerModalOpen(true);
+  };
+
+  // حذف لاعب
+  const handleDeletePlayer = (id: string) => {
+    triggerConfirm({
+      title: 'حذف اللاعب',
+      message: 'هل أنت متأكد من رغبتك في حذف هذا اللاعب؟ لا يمكن حذف اللاعبين الذين لديهم أهداف أو بطاقات مسجلة.',
+      confirmText: 'حذف اللاعب',
+      cancelText: 'تراجع',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await deletePlayer(id);
+          if (res.success) {
+            showToast('تم حذف اللاعب بنجاح');
+            fetchPlayers();
+          } else {
+            showToast(res.error || 'فشل حذف اللاعب', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
   // أرشفة / إلغاء أرشفة فريق
   const handleArchiveTeam = (id: string, isCurrentlyArchived: boolean) => {
     triggerConfirm({
@@ -1093,7 +1197,7 @@ export default function AdminClient({ username }: { username: string }) {
   };
 
   const TAB_CONTENT: Record<TabId, React.ReactNode> = {
-    overview:    <OverviewTab tournamentsCount={tournaments.length} teamsCount={teams.length} />,
+    overview:    <OverviewTab tournamentsCount={tournaments.length} teamsCount={teams.length} playersCount={players.length} />,
     tournaments: (
       <TournamentsTab
         tournaments={tournaments}
@@ -1117,7 +1221,18 @@ export default function AdminClient({ username }: { username: string }) {
         setShowArchived={setShowArchived}
       />
     ),
-    players:     <PlayersTab />,
+    players: (
+      <PlayersTab
+        players={players}
+        teams={teams}
+        loading={playersLoading}
+        includeArchivedTeams={includeArchivedPlayerTeams}
+        setIncludeArchivedTeams={setIncludeArchivedPlayerTeams}
+        onAdd={handleAddPlayer}
+        onEdit={handleEditPlayer}
+        onDelete={handleDeletePlayer}
+      />
+    ),
     matches:     <MatchesTab />,
     voting:      <VotingTab />,
   };
@@ -1267,10 +1382,26 @@ export default function AdminClient({ username }: { username: string }) {
         onSuccess={() => {
           showToast(selectedTeam ? 'تم تحديث الفريق بنجاح!' : 'تم إنشاء الفريق بنجاح!');
           fetchTeams();
+          fetchPlayers();
         }}
         team={selectedTeam}
         tournaments={tournaments}
       />
+
+      {/* المودال الخاص باللاعبين */}
+      {isPlayerModalOpen && (
+        <PlayerModal
+          key={selectedPlayer?.id ?? 'new-player'}
+          isOpen={isPlayerModalOpen}
+          onClose={() => setIsPlayerModalOpen(false)}
+          onSuccess={() => {
+            showToast(selectedPlayer ? 'تم تحديث اللاعب بنجاح!' : 'تم إنشاء اللاعب بنجاح!');
+            fetchPlayers();
+          }}
+          player={selectedPlayer}
+          teams={teams}
+        />
+      )}
 
       {/* التنبيهات المنبثقة (Toasts) */}
       {toast && (

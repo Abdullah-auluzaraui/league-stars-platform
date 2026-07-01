@@ -11,7 +11,19 @@ import HeroStats from './components/HeroStats';
 
 async function getHomeData() {
   try {
-    const [hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors] =
+    const [
+      hero,
+      tournament,
+      liveMatches,
+      nextMatch,
+      lastFinishedMatch,
+      activeVoteGoal,
+      topScorers,
+      sponsors,
+      goalsCount,
+      teamsCount,
+      matchesCount,
+    ] =
       await Promise.all([
         prisma.content.findUnique({ where: { section: 'hero' } }).catch(() => null),
         prisma.tournament.findFirst({ where: { status: 'active' }, orderBy: { createdAt: 'desc' } }).catch(() => null),
@@ -45,41 +57,21 @@ async function getHomeData() {
           take: 5,
         }).catch(() => []),
         prisma.sponsor.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }).catch(() => []),
+        prisma.goal.count().catch(() => 0),
+        prisma.team.count({ where: { archivedAt: null } }).catch(() => 0),
+        prisma.match.count().catch(() => 0),
       ]);
 
-    return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors };
+    return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors, goalsCount, teamsCount, matchesCount };
   } catch {
     return {
       hero: null, tournament: null, liveMatches: [], nextMatch: null,
       lastFinishedMatch: null, activeVoteGoal: null, topScorers: [], sponsors: [],
+      goalsCount: 0, teamsCount: 0, matchesCount: 0,
     };
   }
 }
 
-// ─── Mock Data ──────────────────────────────────────────────────────────────
-
-const MOCK = {
-  tournament: { name: 'بطولة نجوم الدوري الرمضانية الأولى' },
-  hero: { body: 'المنصة الرسمية الأولى لمتابعة تفاصيل البطولة — رصد حي للنتائج، وجدول ترتيب تفاعلي، ومساحة تصويت لاختيار هدف الجولة.' },
-  liveMatches: [
-    { id: 'm1', status: 'live', homeScore: 2, awayScore: 1, matchDate: new Date().toISOString(), venue: 'ملعب الجوهرة', homeTeam: { name: 'فرسان نجد', logoUrl: null }, awayTeam: { name: 'صقور الرياض', logoUrl: null } },
-  ],
-  nextMatch: { id: 'm2', status: 'scheduled', homeScore: 0, awayScore: 0, matchDate: new Date(Date.now() + 3 * 3600 * 1000).toISOString(), venue: 'ملعب الأمير فيصل', homeTeam: { name: 'عميد الغربية', logoUrl: null }, awayTeam: { name: 'أسود الشرقية', logoUrl: null } },
-  lastFinishedMatch: { id: 'm3', status: 'finished', homeScore: 3, awayScore: 0, matchDate: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), venue: 'ملعب الجنوب', homeTeam: { name: 'زعيم الجنوب', logoUrl: null }, awayTeam: { name: 'نجوم المدينة', logoUrl: null } },
-  topScorers: [
-    { id: 'p1', name: 'ياسر القحطاني', goalsCount: 7, team: { name: 'صقور الرياض', logoUrl: null } },
-    { id: 'p2', name: 'محمد السهلاوي', goalsCount: 5, team: { name: 'فرسان نجد', logoUrl: null } },
-    { id: 'p3', name: 'نايف هزازي', goalsCount: 4, team: { name: 'عميد الغربية', logoUrl: null } },
-    { id: 'p4', name: 'يوسف السالم', goalsCount: 3, team: { name: 'أسود الشرقية', logoUrl: null } },
-    { id: 'p5', name: 'تيسير الجاسم', goalsCount: 2, team: { name: 'زعيم الجنوب', logoUrl: null } },
-  ],
-  sponsors: [
-    { id: 's1', name: 'أرامكو السعودية' }, { id: 's2', name: 'روشن العقارية' },
-    { id: 's3', name: 'طيران الرياض' }, { id: 's4', name: 'مشاريع القدية' },
-    { id: 's5', name: 'صندوق الاستثمارات' },
-  ],
-  activeVoteGoal: null as { player: { name: string }; team: { name: string }; id: string } | null,
-};
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -102,8 +94,8 @@ function formatDate(date: Date | string) {
 type MatchData = {
   id: string;
   status: string;
-  homeScore: number;
-  awayScore: number;
+  homeScore: number | null;
+  awayScore: number | null;
   matchDate: Date | string;
   venue: string;
   homeTeam: { name: string; logoUrl: string | null };
@@ -267,14 +259,14 @@ function ScorerRow({ player, rank, delay }: {
 export default async function HomePage() {
   const data = await getHomeData();
 
-  const tournament  = data.tournament ?? MOCK.tournament;
-  const heroBody    = data.hero?.body ?? MOCK.hero.body;
-  const liveMatches = (data.liveMatches?.length ? data.liveMatches : MOCK.liveMatches) as MatchData[];
-  const nextMatch   = (data.nextMatch  ?? MOCK.nextMatch) as MatchData;
-  const lastFin     = (data.lastFinishedMatch ?? MOCK.lastFinishedMatch) as MatchData;
-  const scorers     = data.topScorers.length > 0 ? data.topScorers : MOCK.topScorers;
-  const sponsors    = data.sponsors.length  > 0 ? data.sponsors  : MOCK.sponsors;
-  const voteGoal    = data.activeVoteGoal ?? MOCK.activeVoteGoal;
+  const tournamentName = data.tournament?.name ?? 'League Stars';
+  const heroBody = data.hero?.body ?? 'منصة إدارة ومتابعة البطولات.';
+  const liveMatches = data.liveMatches as MatchData[];
+  const nextMatch = data.nextMatch as MatchData | null;
+  const lastFin = data.lastFinishedMatch as MatchData | null;
+  const scorers = data.topScorers;
+  const sponsors = data.sponsors;
+  const voteGoal = data.activeVoteGoal;
 
   const allMatches: MatchData[] = [
     ...liveMatches,
@@ -306,7 +298,7 @@ export default async function HomePage() {
               WebkitBackdropFilter: 'blur(8px)'
             }}>
             <span className="w-1.5 h-1.5 rounded-full bg-[#C9971A] animate-glow-pulse" />
-            <span className="text-xs font-bold text-[#F0C040] tracking-wide">{tournament.name}</span>
+            <span className="text-xs font-bold text-[#F0C040] tracking-wide">{tournamentName}</span>
           </div>
         </div>
 
@@ -345,7 +337,7 @@ export default async function HomePage() {
 
 
         {/* Quick stats */}
-        <HeroStats goals={48} teams={12} matches={32} />
+        <HeroStats goals={data.goalsCount} teams={data.teamsCount} matches={data.matchesCount} />
       </section>
 
       {/* ══ MATCHES ═══════════════════════════════════════════ */}
@@ -367,11 +359,17 @@ export default async function HomePage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          {allMatches.slice(0, 3).map((m, i) => (
-            <MatchCard key={m.id} match={m} delay={i * 80} />
-          ))}
-        </div>
+        {allMatches.length > 0 ? (
+          <div className="space-y-3">
+            {allMatches.slice(0, 3).map((m, i) => (
+              <MatchCard key={m.id} match={m} delay={i * 80} />
+            ))}
+          </div>
+        ) : (
+          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/35">
+            لا توجد مباريات مسجلة حالياً.
+          </div>
+        )}
       </section>
 
       {/* ══ TOP SCORERS ═══════════════════════════════════════ */}
@@ -385,6 +383,12 @@ export default async function HomePage() {
             الكل <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
         </div>
+
+        {scorers.length === 0 && (
+          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/35">
+            لا توجد أهداف مسجلة بعد.
+          </div>
+        )}
 
         {/* Podium */}
         {scorers.length >= 3 && (

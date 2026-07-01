@@ -195,7 +195,7 @@ export default function TournamentModal({
             <input
               type="text"
               required
-              placeholder="مثال: دوري نجوم الرياض 2026"
+              placeholder="مثال: اسم البطولة"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 focus:bg-white/6 transition-all"

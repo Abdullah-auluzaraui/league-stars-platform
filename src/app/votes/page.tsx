@@ -1,8 +1,6 @@
 import { prisma } from "@/core/lib/prisma";
 import VotesClient from "./VotesClient";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type NominatedGoal = {
   id: string;
   playerName: string;
@@ -29,49 +27,8 @@ export type VotingPageData =
   | { state: "active"; goals: NominatedGoal[] }
   | { state: "archive"; winners: ArchivedWinner[] };
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const MOCK_ACTIVE: VotingPageData = {
-  state: "active",
-  goals: [
-    {
-      id: "g1",
-      playerName: "محمد السهلاوي",
-      teamName: "فرسان نجد",
-      teamLogoUrl: null,
-      videoUrl: null,
-      minute: 23,
-      type: "normal",
-      voteCount: 0,
-    },
-    {
-      id: "g2",
-      playerName: "ياسر القحطاني",
-      teamName: "صقور الرياض",
-      teamLogoUrl: null,
-      videoUrl: null,
-      minute: 67,
-      type: "free_kick",
-      voteCount: 0,
-    },
-    {
-      id: "g3",
-      playerName: "يوسف السالم",
-      teamName: "زعيم الجنوب",
-      teamLogoUrl: null,
-      videoUrl: null,
-      minute: 45,
-      type: "penalty",
-      voteCount: 0,
-    },
-  ],
-};
-
-// ─── Data Fetching ────────────────────────────────────────────────────────────
-
 async function getVotingData(): Promise<VotingPageData> {
   try {
-    // Check for active nominated goals (current voting session)
     const nominatedGoals = await prisma.goal.findMany({
       where: { isNominated: true },
       include: {
@@ -83,22 +40,20 @@ async function getVotingData(): Promise<VotingPageData> {
     });
 
     if (nominatedGoals.length > 0) {
-      // Active voting session
-      const goals: NominatedGoal[] = nominatedGoals.map((g) => ({
-        id: g.id,
-        playerName: g.player.name,
-        teamName: g.team.name,
-        teamLogoUrl: g.team.logoUrl,
-        videoUrl: g.videoUrl,
-        minute: g.minute,
-        type: g.type,
-        voteCount: g.votes.length,
+      const goals: NominatedGoal[] = nominatedGoals.map((goal) => ({
+        id: goal.id,
+        playerName: goal.player.name,
+        teamName: goal.team.name,
+        teamLogoUrl: goal.team.logoUrl,
+        videoUrl: goal.videoUrl,
+        minute: goal.minute,
+        type: goal.type,
+        voteCount: goal.votes.length,
       }));
+
       return { state: "active", goals };
     }
 
-    // No active session — check for past winners (archived goals with votes)
-    // We treat goals with votes but not currently nominated as archive
     const pastWinners = await prisma.goal.findMany({
       where: {
         isNominated: false,
@@ -108,51 +63,40 @@ async function getVotingData(): Promise<VotingPageData> {
         player: { select: { name: true } },
         team: { select: { name: true, logoUrl: true } },
         votes: { select: { id: true } },
-        match: {
-          select: {
-            stage: true,
-            groupName: true,
-          },
-        },
       },
       orderBy: { createdAt: "asc" },
     });
 
     if (pastWinners.length > 0) {
-      const winners: ArchivedWinner[] = pastWinners.map((g, idx) => ({
-        id: g.id,
-        roundLabel: `الجولة ${idx + 1}`,
-        playerName: g.player.name,
-        teamName: g.team.name,
-        teamLogoUrl: g.team.logoUrl,
-        videoUrl: g.videoUrl,
-        totalVotes: g.votes.length,
+      const winners: ArchivedWinner[] = pastWinners.map((goal, index) => ({
+        id: goal.id,
+        roundLabel: `الجولة ${index + 1}`,
+        playerName: goal.player.name,
+        teamName: goal.team.name,
+        teamLogoUrl: goal.team.logoUrl,
+        videoUrl: goal.videoUrl,
+        totalVotes: goal.votes.length,
       }));
+
       return { state: "archive", winners };
     }
 
-    // No data at all — use mock active for demo purposes
-    return MOCK_ACTIVE;
+    return { state: "empty" };
   } catch {
-    return MOCK_ACTIVE;
+    return { state: "empty" };
   }
 }
-
-// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export const metadata = {
   title: "هدف الجولة | League Stars",
   description: "صوّت لأفضل هدف في الجولة وشاهد معرض الأهداف الفائزة بالجولات السابقة.",
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default async function VotesPage() {
   const data = await getVotingData();
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Page Header */}
       <div className="mb-8 animate-fade-in-up">
         <div className="flex items-center gap-3 mb-2">
           <span className="section-accent-line" />
