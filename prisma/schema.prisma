@@ -48,6 +48,7 @@ model Team {
   id        String   @id @default(cuid())
   name      String   @unique
   logoUrl   String?
+  archivedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -67,6 +68,7 @@ model TournamentTeam {
   tournamentId String
   teamId       String
   groupName    String? // A | B | C ...
+  status       String @default("active") // active | disqualified
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)

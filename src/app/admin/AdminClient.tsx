@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Trophy,
@@ -22,7 +22,26 @@ import {
   BarChart3,
   Medal,
   Tv2,
+  Loader2,
+  AlertCircle,
+  Archive,
+  ArchiveRestore,
 } from 'lucide-react';
+import TournamentModal from './TournamentModal';
+import TeamModal from './TeamModal';
+import ConfirmModal from './ConfirmModal';
+import {
+  getTournaments,
+  startTournament,
+  completeTournament,
+  deleteTournament,
+} from './tournamentActions';
+import {
+  getTeams,
+  archiveTeam,
+  unarchiveTeam,
+  deleteTeam,
+} from './teamActions';
 
 // ─── Types (واجهات البيانات الوهمية) ─────────────────────────────────────────
 
@@ -135,12 +154,22 @@ function SectionHeader({ title, subtitle, onAdd }: { title: string; subtitle: st
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
-function OverviewTab() {
+interface OverviewTabProps {
+  tournamentsCount: number;
+  teamsCount: number;
+}
+
+function OverviewTab({ tournamentsCount, teamsCount }: OverviewTabProps) {
+  const stats = [
+    { label: 'البطولات',    value: String(tournamentsCount),    icon: Trophy,    color: 'from-[#C9971A]/20 to-[#C9971A]/5',  border: 'border-[#C9971A]/20',  text: 'text-[#F0C040]' },
+    ...STATS.slice(1),
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {STATS.map((s, i) => {
+        {stats.map((s, i) => {
           const Icon = s.icon;
           return (
             <div
@@ -214,171 +243,362 @@ function OverviewTab() {
 
 // ─── Tournaments Tab ──────────────────────────────────────────────────────────
 
-function TournamentsTab() {
+interface TournamentsTabProps {
+  tournaments: any[];
+  isLoading: boolean;
+  onAdd: () => void;
+  onEdit: (tournament: any) => void;
+  onDelete: (id: string) => void;
+  onStart: (id: string) => void;
+  onComplete: (id: string) => void;
+}
+
+function TournamentsTab({
+  tournaments,
+  isLoading,
+  onAdd,
+  onEdit,
+  onDelete,
+  onStart,
+  onComplete,
+}: TournamentsTabProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-6 h-6 animate-spin text-[#F0C040]" />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in-up">
       <SectionHeader
         title="البطولات"
         subtitle="إدارة دورة حياة البطولات الكاملة"
-        onAdd={() => {}}
+        onAdd={onAdd}
       />
-      <div className="space-y-3">
-        {MOCK_TOURNAMENTS.map((t, i) => (
-          <div
-            key={t.id}
-            className="glass-card rounded-2xl p-4 sm:p-5 animate-fade-in-up"
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                {/* Icon */}
-                <div className="p-2.5 rounded-xl bg-[#C9971A]/10 border border-[#C9971A]/15 flex-shrink-0">
-                  <Trophy className="w-5 h-5 text-[#F0C040]" />
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <h3 className="text-sm font-bold text-white leading-tight">{t.name}</h3>
-                    <StatusBadge status={t.status} />
-                    <span className="text-[10px] text-white/35 bg-white/5 px-2 py-0.5 rounded-md whitespace-nowrap">
-                      {t.type === 'group_stage' ? `${t.groups} مجموعات` : 'إقصائي'}
-                    </span>
+      {tournaments.length === 0 ? (
+        <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
+          <Trophy className="w-10 h-10 text-white/15 mx-auto mb-2" />
+          <p className="text-xs text-white/30 font-semibold">لا توجد بطولات مسجلة حالياً، اضغط على إضافة جديد لإنشاء بطولة</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {tournaments.map((t, i) => (
+            <div
+              key={t.id}
+              className="glass-card rounded-2xl p-4 sm:p-5 animate-fade-in-up"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  {/* Icon */}
+                  <div className="p-2.5 rounded-xl bg-[#C9971A]/10 border border-[#C9971A]/15 flex-shrink-0">
+                    <Trophy className="w-5 h-5 text-[#F0C040]" />
                   </div>
-                  <p className="text-[11px] text-white/35">
-                    {t.qualifiers} فرق متأهلة من كل مجموعة · {t.groups} مجموعة
-                  </p>
-                </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-white/5 sm:border-0 flex-shrink-0">
-                {t.status === 'upcoming' && (
-                  <button className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap">
-                    <Play className="w-3 h-3" />
-                    بدء
-                  </button>
-                )}
-                {t.status === 'active' && (
-                  <button className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer whitespace-nowrap">
-                    <Flag className="w-3 h-3" />
-                    إنهاء المجموعات
-                  </button>
-                )}
-                {t.status !== 'completed' && (
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <h3 className="text-sm font-bold text-white leading-tight">{t.name}</h3>
+                      <StatusBadge status={t.status} />
+                      <span className="text-[10px] text-white/35 bg-white/5 px-2 py-0.5 rounded-md whitespace-nowrap">
+                        {t.type === 'group_stage' ? `${t.groupCount} مجموعات` : 'إقصائي'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/35">
+                      {t.type === 'group_stage'
+                        ? `${t.qualifyingTeams} فرق متأهلة من كل مجموعة · ${t.groupCount} مجموعة`
+                        : `بطولة خروج المغلوب (إقصائية)`
+                      }
+                      {t.startDate && ` · تبدأ في ${new Date(t.startDate).toLocaleDateString('ar-SA')}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-white/5 sm:border-0 flex-shrink-0">
+                  {t.status === 'upcoming' && (
+                    <button
+                      onClick={() => onStart(t.id)}
+                      className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      <Play className="w-3 h-3" />
+                      بدء
+                    </button>
+                  )}
+                  {t.status === 'active' && (
+                    <button
+                      onClick={() => onComplete(t.id)}
+                      className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      <Flag className="w-3 h-3" />
+                      إنهاء البطولة
+                    </button>
+                  )}
                   <div className="flex items-center gap-1">
-                    <button className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+                    <button
+                      onClick={() => onEdit(t)}
+                      className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                    >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {t.status !== 'active' && (
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Teams Tab ────────────────────────────────────────────────────────────────
 
-function TeamsTab() {
+interface TeamsTabProps {
+  teams: any[];
+  loading: boolean;
+  onAdd: () => void;
+  onEdit: (team: any) => void;
+  onDelete: (id: string) => void;
+  onArchiveToggle: (id: string, isArchived: boolean) => void;
+  showArchived: boolean;
+  setShowArchived: (val: boolean) => void;
+}
+
+function TeamsTab({
+  teams,
+  loading,
+  onAdd,
+  onEdit,
+  onDelete,
+  onArchiveToggle,
+  showArchived,
+  setShowArchived,
+}: TeamsTabProps) {
   return (
     <div className="animate-fade-in-up">
       <SectionHeader
         title="الفرق"
         subtitle="إدارة الفرق وتوزيعها على المجموعات"
-        onAdd={() => {}}
+        onAdd={onAdd}
       />
 
-      {/* 1. Mobile View (Cards) */}
-      <div className="block sm:hidden space-y-3">
-        {MOCK_TEAMS.map((team, i) => (
-          <div
-            key={team.id}
-            className="glass-card rounded-xl p-4 flex items-center justify-between gap-3 animate-fade-in-up"
-            style={{ animationDelay: `${i * 40}ms` }}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center flex-shrink-0">
-                <Shield className="w-4 h-4 text-white/30" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-sm font-bold text-white block truncate">{team.name}</span>
-                <span className="text-[10px] text-white/40 block truncate">{team.tournament}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <span className="text-[10px] font-black text-[#F0C040] bg-[#C9971A]/10 px-2 py-0.5 rounded-md">
-                المجموعة {team.group}
-              </span>
-              <div className="flex items-center gap-1">
-                <button className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* شريط الفلترة والأرشفة */}
+      <div className="flex items-center justify-between mb-4 bg-white/3 border border-white/5 p-3 rounded-2xl">
+        <div className="text-xs text-white/40 font-semibold">إجمالي الفرق: {teams.length}</div>
+        <button
+          onClick={() => setShowArchived(!showArchived)}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            showArchived
+              ? 'bg-[#C9971A]/10 border-[#C9971A]/20 text-[#F0C040]'
+              : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/6 hover:text-white'
+          }`}
+          type="button"
+        >
+          {showArchived ? 'إخفاء الفرق المؤرشفة' : 'عرض الفرق المؤرشفة'}
+        </button>
       </div>
 
-      {/* 2. Desktop View (Table) */}
-      <div className="hidden sm:block glass-card rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr className="border-b border-white/6">
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">البطولة</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">المجموعة</th>
-                <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/4">
-              {MOCK_TEAMS.map((team, i) => (
-                <tr
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="w-8 h-8 text-[#F0C040] animate-spin" />
+          <span className="text-xs text-white/30 font-semibold">جاري تحميل قائمة الفرق...</span>
+        </div>
+      ) : teams.length === 0 ? (
+        <div className="text-center py-16 bg-[#121018]/40 border border-white/5 rounded-2xl">
+          <Shield className="w-10 h-10 text-white/10 mx-auto mb-2.5" />
+          <p className="text-xs text-white/30 font-semibold">
+            {showArchived ? 'لا توجد فرق مؤرشفة حالياً' : 'لا توجد فرق مسجلة. أضف فريقاً جديداً للبدء!'}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* 1. Mobile View (Cards) */}
+          <div className="block sm:hidden space-y-3">
+            {teams.map((team, i) => {
+              const assoc = team.tournaments?.[0];
+              const isArchived = !!team.archivedAt;
+              return (
+                <div
                   key={team.id}
-                  className="hover:bg-white/3 transition-colors"
+                  className={`glass-card rounded-xl p-4 flex items-center justify-between gap-3 animate-fade-in-up ${isArchived ? 'opacity-50 border-white/5 bg-white/2' : ''}`}
+                  style={{ animationDelay: `${i * 40}ms` }}
                 >
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {team.logoUrl ? (
+                      <img
+                        src={team.logoUrl}
+                        alt={team.name}
+                        className="w-8 h-8 rounded-lg object-contain bg-white/5 border border-white/8 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center flex-shrink-0">
                         <Shield className="w-4 h-4 text-white/30" />
                       </div>
-                      <span className="text-sm font-bold text-white whitespace-nowrap">{team.name}</span>
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-white block truncate">{team.name}</span>
+                        {isArchived && (
+                          <span className="text-[8px] font-black text-white/50 bg-white/10 px-1 py-0.5 rounded">مؤرشف</span>
+                        )}
+                        {assoc?.status === 'disqualified' && (
+                          <span className="text-[8px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-1 py-0.5 rounded">مستبعد</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-white/40 block truncate">
+                        {assoc ? assoc.tournament.name : 'فريق عام (غير مرتبط)'}
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <span className="text-xs text-white/45 whitespace-nowrap">{team.tournament}</span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
-                    <span className="text-xs font-black text-[#F0C040] bg-[#C9971A]/10 px-2.5 py-0.5 rounded-md whitespace-nowrap">
-                      {team.group}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 sm:py-3.5">
-                    <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                      <button className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {assoc?.groupName && (
+                      <span className="text-[10px] font-black text-[#F0C040] bg-[#C9971A]/10 px-2 py-0.5 rounded-md">
+                        المجموعة {assoc.groupName}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onEdit(team)}
+                        className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                        type="button"
+                      >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer">
+                      <button
+                        onClick={() => onArchiveToggle(team.id, isArchived)}
+                        className="p-1.5 text-white/30 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                        title={isArchived ? 'إلغاء الأرشفة' : 'أرشفة الفريق'}
+                        type="button"
+                      >
+                        {isArchived ? (
+                          <ArchiveRestore className="w-3.5 h-3.5" />
+                        ) : (
+                          <Archive className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => onDelete(team.id)}
+                        className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                        type="button"
+                      >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 2. Desktop View (Table) */}
+          <div className="hidden sm:block glass-card rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-white/6">
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">البطولة</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">المجموعة</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/4">
+                  {teams.map((team, i) => {
+                    const assoc = team.tournaments?.[0];
+                    const isArchived = !!team.archivedAt;
+                    return (
+                      <tr
+                        key={team.id}
+                        className={`hover:bg-white/3 transition-colors ${isArchived ? 'opacity-50 bg-white/1' : ''}`}
+                      >
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <div className="flex items-center gap-3">
+                            {team.logoUrl ? (
+                              <img
+                                src={team.logoUrl}
+                                alt={team.name}
+                                className="w-8 h-8 rounded-lg object-contain bg-white/5 border border-white/8 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center flex-shrink-0">
+                                <Shield className="w-4 h-4 text-white/30" />
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-white whitespace-nowrap">{team.name}</span>
+                              {isArchived && (
+                                <span className="text-[8px] font-black text-white/50 bg-white/10 px-1.5 py-0.5 rounded">مؤرشف</span>
+                              )}
+                              {assoc?.status === 'disqualified' && (
+                                <span className="text-[8px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">مستبعد</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <span className="text-xs text-white/45 whitespace-nowrap">
+                            {assoc ? assoc.tournament.name : '-'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
+                          {assoc?.groupName ? (
+                            <span className="text-xs font-black text-[#F0C040] bg-[#C9971A]/10 px-2.5 py-0.5 rounded-md whitespace-nowrap">
+                              المجموعة {assoc.groupName}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-white/20">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-3.5">
+                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => onEdit(team)}
+                              className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              type="button"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onArchiveToggle(team.id, isArchived)}
+                              className="p-1.5 text-white/30 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              title={isArchived ? 'إلغاء الأرشفة' : 'أرشفة الفريق'}
+                              type="button"
+                            >
+                              {isArchived ? (
+                                <ArchiveRestore className="w-3.5 h-3.5" />
+                              ) : (
+                                <Archive className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => onDelete(team.id)}
+                              className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                              type="button"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -620,16 +840,283 @@ function VotingTab() {
   );
 }
 
-// ─── Main AdminClient ─────────────────────────────────────────────────────────
-
 export default function AdminClient({ username }: { username: string }) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // --- حالات البطولات وقاعدة البيانات ---
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [tournamentsLoading, setTournamentsLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // حالات نافذة التحكم بالبطولة
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState<any | null>(null);
+
+  // --- حالات الفرق وقاعدة البيانات ---
+  const [teams, setTeams] = useState<any[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+
+  // حالات نافذة التحكم بالفرق
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
+
+  // إعدادات نافذة التأكيد المخصصة (Confirm Modal)
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant: 'danger' | 'warning' | 'success';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'warning',
+    onConfirm: () => {},
+  });
+
+  // نظام عرض التنبيهات
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // مساعد لفتح نافذة التأكيد المخصصة
+  const triggerConfirm = (config: Omit<typeof confirmConfig, 'isOpen'>) => {
+    setConfirmConfig({ ...config, isOpen: true });
+  };
+
+  // جلب البطولات من السيرفر
+  const fetchTournaments = async () => {
+    try {
+      setTournamentsLoading(true);
+      const data = await getTournaments();
+      setTournaments(data);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل قائمة البطولات', 'error');
+    } finally {
+      setTournamentsLoading(false);
+    }
+  };
+
+  // جلب الفرق من السيرفر
+  const fetchTeams = async () => {
+    try {
+      setTeamsLoading(true);
+      const data = await getTeams(showArchived);
+      setTeams(data);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل قائمة الفرق', 'error');
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [showArchived]);
+
+  // إضافة وتعديل
+  const handleAddTournament = () => {
+    setSelectedTournament(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditTournament = (tournament: any) => {
+    setSelectedTournament(tournament);
+    setIsModalOpen(true);
+  };
+
+  // بدء البطولة
+  const handleStartTournament = (id: string) => {
+    triggerConfirm({
+      title: 'بدء البطولة',
+      message: 'هل أنت متأكد من رغبتك في بدء هذه البطولة؟ سيؤدي هذا لتفعيلها رسمياً وتعيين تاريخ البدء تلقائياً اليوم. لن تتمكن من تعديل إعدادات المجموعات ونوع البطولة لاحقاً.',
+      confirmText: 'بدء البطولة الآن',
+      cancelText: 'تراجع',
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          const res = await startTournament(id);
+          if (res.success) {
+            showToast('تم بدء البطولة بنجاح!');
+            fetchTournaments();
+          } else {
+            showToast(res.error || 'فشل بدء البطولة', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
+  // إنهاء البطولة
+  const handleCompleteTournament = (id: string) => {
+    triggerConfirm({
+      title: 'إنهاء البطولة',
+      message: 'هل أنت متأكد من رغبتك في إنهاء هذه البطولة بشكل رسمي وأرشفتها؟ سيتم تسجيل تاريخ الانتهاء تلقائياً اليوم.',
+      confirmText: 'إنهاء البطولة',
+      cancelText: 'إلغاء',
+      variant: 'success',
+      onConfirm: async () => {
+        try {
+          const res = await completeTournament(id);
+          if (res.success) {
+            showToast('تم إنهاء البطولة بنجاح!');
+            fetchTournaments();
+          } else {
+            showToast(res.error || 'فشل إنهاء البطولة', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
+  // حذف البطولة
+  const handleDeleteTournament = (id: string) => {
+    triggerConfirm({
+      title: 'حذف البطولة',
+      message: 'هل أنت متأكد من رغبتك في حذف هذه البطولة نهائياً؟ هذا الإجراء لا يمكن التراجع عنه وسيتم إزالة كافة السجلات المرتبطة بها.',
+      confirmText: 'حذف نهائي',
+      cancelText: 'تراجع',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await deleteTournament(id);
+          if (res.success) {
+            showToast('تم حذف البطولة بنجاح');
+            fetchTournaments();
+          } else {
+            showToast(res.error || 'فشل حذف البطولة', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
+  // إضافة وتعديل فريق
+  const handleAddTeam = () => {
+    setSelectedTeam(null);
+    setIsTeamModalOpen(true);
+  };
+
+  const handleEditTeam = (team: any) => {
+    setSelectedTeam(team);
+    setIsTeamModalOpen(true);
+  };
+
+  // أرشفة / إلغاء أرشفة فريق
+  const handleArchiveTeam = (id: string, isCurrentlyArchived: boolean) => {
+    triggerConfirm({
+      title: isCurrentlyArchived ? 'إلغاء أرشفة الفريق' : 'أرشفة الفريق',
+      message: isCurrentlyArchived
+        ? 'هل ترغب في إلغاء أرشفة الفريق وإعادته للظهور كفريق نشط في القوائم؟'
+        : 'هل ترغب في أرشفة الفريق؟ سيتم إخفاؤه من قوائم الاختيار للبطولات الجديدة مع الحفاظ على كافة البيانات التاريخية.',
+      confirmText: isCurrentlyArchived ? 'إلغاء الأرشفة' : 'أرشفة الآن',
+      cancelText: 'تراجع',
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          const res = (isCurrentlyArchived ? await unarchiveTeam(id) : await archiveTeam(id)) as any;
+          if (res.success) {
+            showToast(isCurrentlyArchived ? 'تم إلغاء أرشفة الفريق' : 'تم أرشفة الفريق بنجاح!');
+            fetchTeams();
+          } else {
+            showToast(res.error || 'فشل تعديل حالة الأرشفة', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
+  // حذف فريق (مع التحويل الذكي للأرشفة)
+  const handleDeleteTeam = (id: string) => {
+    triggerConfirm({
+      title: 'حذف الفريق',
+      message: 'هل أنت متأكد من رغبتك في حذف هذا الفريق نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.',
+      confirmText: 'حذف نهائي',
+      cancelText: 'تراجع',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = (await deleteTeam(id)) as any;
+          if (res.success) {
+            showToast('تم حذف الفريق بنجاح');
+            fetchTeams();
+          } else if (res.requireArchive) {
+            // إذا تطلب الأرشفة، نعرض مودال التأكيد الذكي للأرشفة مباشرة
+            triggerConfirm({
+              title: 'أرشفة الفريق بدلاً من الحذف',
+              message: 'لا يمكن حذف الفريق نظراً لوجود مباريات مسجلة له في المنصة. هل ترغب في أرشفته بدلاً من ذلك لإخفائه من القوائم النشطة مع الحفاظ على كافة البيانات التاريخية؟',
+              confirmText: 'نعم، أرشفة الفريق',
+              cancelText: 'إلغاء',
+              variant: 'warning',
+              onConfirm: async () => {
+                try {
+                  const resArchive = (await archiveTeam(id)) as any;
+                  if (resArchive.success) {
+                    showToast('تم أرشفة الفريق بنجاح!');
+                    fetchTeams();
+                  } else {
+                    showToast(resArchive.error || 'فشل أرشفة الفريق', 'error');
+                  }
+                } catch (err) {
+                  showToast('حدث خطأ غير متوقع', 'error');
+                }
+              },
+            });
+          } else {
+            showToast(res.error || 'فشل حذف الفريق', 'error');
+          }
+        } catch (err) {
+          showToast('حدث خطأ غير متوقع', 'error');
+        }
+      },
+    });
+  };
+
   const TAB_CONTENT: Record<TabId, React.ReactNode> = {
-    overview:    <OverviewTab />,
-    tournaments: <TournamentsTab />,
-    teams:       <TeamsTab />,
+    overview:    <OverviewTab tournamentsCount={tournaments.length} teamsCount={teams.length} />,
+    tournaments: (
+      <TournamentsTab
+        tournaments={tournaments}
+        isLoading={tournamentsLoading}
+        onAdd={handleAddTournament}
+        onEdit={handleEditTournament}
+        onDelete={handleDeleteTournament}
+        onStart={handleStartTournament}
+        onComplete={handleCompleteTournament}
+      />
+    ),
+    teams: (
+      <TeamsTab
+        teams={teams}
+        loading={teamsLoading}
+        onAdd={handleAddTeam}
+        onEdit={handleEditTeam}
+        onDelete={handleDeleteTeam}
+        onArchiveToggle={handleArchiveTeam}
+        showArchived={showArchived}
+        setShowArchived={setShowArchived}
+      />
+    ),
     players:     <PlayersTab />,
     matches:     <MatchesTab />,
     voting:      <VotingTab />,
@@ -761,6 +1248,56 @@ export default function AdminClient({ username }: { username: string }) {
           {TAB_CONTENT[activeTab]}
         </div>
       </div>
+
+      {/* المودال الخاص بالبطولات */}
+      <TournamentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          showToast(selectedTournament ? 'تم تحديث البطولة بنجاح!' : 'تم إنشاء البطولة بنجاح!');
+          fetchTournaments();
+        }}
+        tournament={selectedTournament}
+      />
+
+      {/* المودال الخاص بالفرق */}
+      <TeamModal
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamModalOpen(false)}
+        onSuccess={() => {
+          showToast(selectedTeam ? 'تم تحديث الفريق بنجاح!' : 'تم إنشاء الفريق بنجاح!');
+          fetchTeams();
+        }}
+        team={selectedTeam}
+        tournaments={tournaments}
+      />
+
+      {/* التنبيهات المنبثقة (Toasts) */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-6 z-[200] px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-2 animate-fade-in-up font-semibold text-xs ${
+            toast.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-red-500/10 border-red-500/20 text-red-400'
+          }`}
+          dir="rtl"
+        >
+          <AlertCircle className="w-4.5 h-4.5 flex-shrink-0" />
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* نافذة التأكيد الفاخرة المخصصة */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        cancelText={confirmConfig.cancelText}
+        variant={confirmConfig.variant}
+        onConfirm={confirmConfig.onConfirm}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
