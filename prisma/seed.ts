@@ -60,8 +60,8 @@ async function deleteDemoRecords() {
   await prisma.goalVote.deleteMany({
     where: {
       OR: [
-        { goal: { teamId: { in: demoTeamIds } } },
-        { goal: { match: { tournamentId: { in: demoTournamentIds } } } },
+        { votingRoundGoal: { goal: { teamId: { in: demoTeamIds } } } },
+        { votingRoundGoal: { goal: { match: { tournamentId: { in: demoTournamentIds } } } } },
       ],
     },
   });

@@ -42,14 +42,18 @@ async function getHomeData() {
           include: { homeTeam: { select: { name: true, logoUrl: true } }, awayTeam: { select: { name: true, logoUrl: true } } },
           orderBy: { matchDate: 'desc' },
         }).catch(() => null),
-        prisma.goal.findFirst({
-          where: { isNominated: true },
+        prisma.votingRoundGoal.findFirst({
+          where: { round: { status: 'active' } },
           include: {
-            player: { select: { name: true } },
-            team: { select: { name: true } },
-            match: { include: { homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } } },
+            goal: {
+              include: {
+                player: { select: { name: true } },
+                team: { select: { name: true } },
+                match: { include: { homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } } },
+              },
+            },
           },
-        }).catch(() => null),
+        }).then((rg) => rg?.goal || null).catch(() => null),
         prisma.player.findMany({
           where: { goalsCount: { gt: 0 } },
           include: { team: { select: { name: true, logoUrl: true } } },
@@ -470,7 +474,7 @@ export default async function HomePage() {
                 <div className="text-[11px] text-white/45 mt-0.5">هدف {voteGoal.player.name} — {voteGoal.team.name}</div>
               </div>
             </div>
-            <Link href={`/matches?voteGoalId=${voteGoal.id}`} className="btn-trophy w-full flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl">
+            <Link href="/votes" className="btn-trophy w-full flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl">
               <Vote className="w-4 h-4" />
               صوّت الآن
             </Link>

@@ -135,13 +135,13 @@ model Goal {
   type        String   @default("normal") // normal | penalty | own_goal | free_kick
   minute      Int
   videoUrl    String?
-  isNominated Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   match  Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player Player     @relation(fields: [playerId], references: [id])
   team   Team       @relation(fields: [teamId], references: [id])
-  votes  GoalVote[]
+  
+  votingRoundGoals VotingRoundGoal[]
 }
 
 // ═══════════════════════════════════════
@@ -165,15 +165,49 @@ model Card {
 // 9. أصوات هدف الجولة
 // ═══════════════════════════════════════
 model GoalVote {
-  id          String   @id @default(cuid())
-  goalId      String
-  visitorIp   String
-  fingerprint String
-  votedAt     DateTime @default(now())
+  id                String   @id @default(cuid())
+  votingRoundGoalId String
+  visitorIp         String
+  fingerprint       String
+  votedAt           DateTime @default(now())
 
-  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  votingRoundGoal   VotingRoundGoal @relation(fields: [votingRoundGoalId], references: [id], onDelete: Cascade)
 
-  @@unique([goalId, fingerprint])
+  @@unique([votingRoundGoalId, fingerprint])
+}
+
+// ═══════════════════════════════════════
+// 9أ. جولات التصويت (Voting Rounds)
+// ═══════════════════════════════════════
+model VotingRound {
+  id              String            @id @default(cuid())
+  title           String
+  description     String?
+  status          String            @default("draft") // draft | active | closed | archived
+  tournamentId    String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  closedAt        DateTime?
+  winnerGoalId    String?           // معرف الهدف الفائز (Goal)
+  showResultsMode String            @default("after_vote") // live | after_vote | hidden
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  goals           VotingRoundGoal[]
+}
+
+model VotingRoundGoal {
+  id        String   @id @default(cuid())
+  roundId   String
+  goalId    String
+  videoUrl  String?
+  sortOrder Int      @default(0)
+
+  round     VotingRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  goal      Goal        @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  votes     GoalVote[]
+
+  @@unique([roundId, goalId])
 }
 
 // ═══════════════════════════════════════

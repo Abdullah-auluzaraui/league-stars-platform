@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -31,6 +31,8 @@ import {
 import TournamentModal from './TournamentModal';
 import TeamModal from './TeamModal';
 import PlayerModal from './PlayerModal';
+import MatchModal from './MatchModal';
+import VotingTab from './VotingTab';
 import ConfirmModal from './ConfirmModal';
 import {
   getTournaments,
@@ -48,6 +50,13 @@ import {
   getPlayers,
   deletePlayer,
 } from './playerActions';
+import {
+  getMatches,
+  deleteMatch,
+} from './matchActions';
+import {
+  getVotingRounds,
+} from './votingActions';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -850,38 +859,168 @@ function PlayersTab({
 }
 
 // ─── Matches Tab ──────────────────────────────────────────────────────────────
+import LiveMatchControl from './LiveMatchControl';
 
-function MatchesTab() {
+interface MatchesTabProps {
+  matches: any[];
+  isLoading: boolean;
+  onAdd: () => void;
+  onEdit: (match: any) => void;
+  onDelete: (id: string) => void;
+  players: any[];
+  fetchMatches: () => void;
+  showToast: (msg: string, type?: 'success' | 'error') => void;
+  activeSubTab: 'schedule' | 'live';
+  setActiveSubTab: (tab: 'schedule' | 'live') => void;
+}
+
+function MatchesTab({
+  matches,
+  isLoading,
+  onAdd,
+  onEdit,
+  onDelete,
+  players,
+  fetchMatches,
+  showToast,
+  activeSubTab,
+  setActiveSubTab,
+}: MatchesTabProps) {
   return (
-    <div className="animate-fade-in-up">
-      <SectionHeader
-        title="المباريات"
-        subtitle="إدارة الجدول وإدخال النتائج"
-        onAdd={() => {}}
-      />
-      <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center">
-        <Swords className="w-10 h-10 text-white/15 mx-auto mb-2" />
-        <p className="text-xs font-semibold text-white/30">لا توجد مباريات مسجلة حالياً.</p>
+    <div className="space-y-6">
+      {/* التبويبات الفرعية الفاخرة */}
+      <div className="flex items-center gap-2 p-1 bg-white/3 border border-white/5 rounded-xl max-w-xs" dir="rtl">
+        <button
+          onClick={() => setActiveSubTab('schedule')}
+          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center ${
+            activeSubTab === 'schedule'
+              ? 'bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/20'
+              : 'text-white/45 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          جدولة المباريات
+        </button>
+        <button
+          onClick={() => setActiveSubTab('live')}
+          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer text-center ${
+            activeSubTab === 'live'
+              ? 'bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/20'
+              : 'text-white/45 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          إدارة مباشرة
+        </button>
       </div>
+
+      {activeSubTab === 'schedule' ? (
+        <div className="space-y-4 animate-fade-in-up">
+          <SectionHeader
+            title="جدولة المباريات"
+            subtitle="جدولة المباريات وتحديد الملاعب والتواريخ للبطولة"
+            onAdd={onAdd}
+          />
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-[#F0C040] animate-spin" />
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center">
+              <Swords className="w-10 h-10 text-white/15 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-white/30">لا توجد مباريات مجدولة حالياً.</p>
+            </div>
+          ) : (
+            <div className="glass-card rounded-2xl border border-white/5 overflow-hidden text-right" dir="rtl">
+              <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <table className="w-full border-collapse text-right">
+                  <thead>
+                    <tr className="border-b border-white/5 bg-white/2 text-[10px] sm:text-xs font-black text-white/40">
+                      <th className="px-6 py-4">البطولة</th>
+                      <th className="px-6 py-4">المرحلة / المجموعة</th>
+                      <th className="px-6 py-4 text-center">المباراة</th>
+                      <th className="px-6 py-4">التاريخ والوقت</th>
+                      <th className="px-6 py-4">الملعب</th>
+                      <th className="px-6 py-4">الحالة</th>
+                      <th className="px-6 py-4 text-left">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/4 text-xs font-semibold text-white/80">
+                    {matches.map((m) => {
+                      const matchDateStr = m.matchDate
+                        ? new Date(m.matchDate).toLocaleString('ar-SA', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })
+                        : '-';
+                      return (
+                        <tr key={m.id} className="hover:bg-white/1 transition-colors">
+                          <td className="px-6 py-4 font-bold text-[#F0C040] truncate max-w-[120px]">
+                            {m.tournament?.name}
+                          </td>
+                          <td className="px-6 py-4">
+                            {m.stage === 'group' ? `دور المجموعات` : `خروج المغلوب`}
+                            {m.groupName && ` (المجموعة ${m.groupName})`}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-center gap-3">
+                              <span className="font-bold">{m.homeTeam?.name}</span>
+                              <span className="bg-white/4 px-2 py-0.5 rounded text-[10px] text-white/60">ضد</span>
+                              <span className="font-bold">{m.awayTeam?.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-mono text-white/65">{matchDateStr}</td>
+                          <td className="px-6 py-4 text-white/65">{m.venue || '-'}</td>
+                          <td className="px-6 py-4">
+                            {m.status === 'live' ? (
+                              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded animate-pulse">مباشر</span>
+                            ) : m.status === 'finished' ? (
+                              <span className="text-[10px] font-black text-white/45 bg-white/10 px-2 py-0.5 rounded">منتهية</span>
+                            ) : (
+                              <span className="text-[10px] font-black text-[#F0C040] bg-[#C9971A]/10 px-2 py-0.5 rounded">مجدولة</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-left">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => onEdit(m)}
+                                className="p-1.5 text-white/30 hover:text-[#F0C040] hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                title="تعديل الإعدادات"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => onDelete(m.id)}
+                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                title="حذف المباراة"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4 animate-fade-in-up">
+          <LiveMatchControl
+            matches={matches}
+            players={players}
+            fetchMatches={fetchMatches}
+            showToast={showToast}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function VotingTab() {
-  return (
-    <div className="animate-fade-in-up">
-      <SectionHeader
-        title="جلسات التصويت"
-        subtitle="إدارة وتفعيل تصويت الجمهور لأفضل هدف"
-        onAdd={() => {}}
-      />
-      <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
-        <Medal className="w-8 h-8 text-white/15 mx-auto mb-2" />
-        <p className="text-xs font-semibold text-white/30">لا توجد جلسات تصويت نشطة حالياً.</p>
-      </div>
-    </div>
-  );
-}
+// VotingTab is now imported from its own file
 
 export default function AdminClient({ username }: { username: string }) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -912,6 +1051,20 @@ export default function AdminClient({ username }: { username: string }) {
   // حالات نافذة التحكم باللاعبين
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<AdminPlayer | null>(null);
+
+  // --- حالات المباريات وقاعدة البيانات ---
+  const [matches, setMatches] = useState<any[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(true);
+  const [activeMatchTab, setActiveMatchTab] = useState<'schedule' | 'live'>('schedule');
+
+  // حالات نافذة التحكم بالمباريات
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
+
+  // --- حالات جولات التصويت وقاعدة البيانات ---
+  const [votingRounds, setVotingRounds] = useState<any[]>([]);
+  const [votingRoundsLoading, setVotingRoundsLoading] = useState(true);
+  const [activeVotingSubTab, setActiveVotingSubTab] = useState<'current' | 'nominate' | 'results' | 'archive'>('current');
 
   // إعدادات نافذة التأكيد المخصصة (Confirm Modal)
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -983,8 +1136,38 @@ export default function AdminClient({ username }: { username: string }) {
     }
   };
 
+  // جلب المباريات من السيرفر
+  const fetchMatches = async () => {
+    try {
+      setMatchesLoading(true);
+      const data = await getMatches();
+      setMatches(data);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل قائمة المباريات', 'error');
+    } finally {
+      setMatchesLoading(false);
+    }
+  };
+
+  // جلب جولات التصويت من السيرفر
+  const fetchVotingRounds = async () => {
+    try {
+      setVotingRoundsLoading(true);
+      const data = await getVotingRounds();
+      setVotingRounds(data);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل قائمة جولات التصويت', 'error');
+    } finally {
+      setVotingRoundsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTournaments();
+    fetchMatches();
+    fetchVotingRounds();
   }, []);
 
   useEffect(() => {
@@ -1233,8 +1416,58 @@ export default function AdminClient({ username }: { username: string }) {
         onDelete={handleDeletePlayer}
       />
     ),
-    matches:     <MatchesTab />,
-    voting:      <VotingTab />,
+    matches: (
+      <MatchesTab
+        matches={matches}
+        isLoading={matchesLoading}
+        onAdd={() => {
+          setSelectedMatch(null);
+          setIsMatchModalOpen(true);
+        }}
+        onEdit={(match) => {
+          setSelectedMatch(match);
+          setIsMatchModalOpen(true);
+        }}
+        onDelete={(id) => {
+          triggerConfirm({
+            title: 'حذف المباراة',
+            message: 'هل أنت متأكد من رغبتك في إلغاء وحذف هذه المباراة نهائياً؟ هذا الإجراء لا يمكن التراجع عنه ويحذف سجلات الأهداف المرتبطة.',
+            confirmText: 'حذف نهائي',
+            cancelText: 'تراجع',
+            variant: 'danger',
+            onConfirm: async () => {
+              try {
+                const res = await deleteMatch(id);
+                if (res.success) {
+                  showToast('تم حذف المباراة بنجاح');
+                  fetchMatches();
+                } else {
+                  showToast(res.error || 'فشل حذف المباراة', 'error');
+                }
+              } catch (err) {
+                showToast('حدث خطأ غير متوقع', 'error');
+              }
+            },
+          });
+        }}
+        players={players}
+        fetchMatches={fetchMatches}
+        showToast={showToast}
+        activeSubTab={activeMatchTab}
+        setActiveSubTab={setActiveMatchTab}
+      />
+    ),
+    voting: (
+      <VotingTab
+        votingRounds={votingRounds}
+        isLoading={votingRoundsLoading}
+        fetchVotingRounds={fetchVotingRounds}
+        tournaments={tournaments}
+        showToast={showToast}
+        activeSubTab={activeVotingSubTab}
+        setActiveSubTab={setActiveVotingSubTab}
+      />
+    ),
   };
 
   // دالة مشتركة لعرض محتويات القائمة الجانبية لمنع تكرار الكود
@@ -1402,6 +1635,19 @@ export default function AdminClient({ username }: { username: string }) {
           teams={teams}
         />
       )}
+
+      {/* المودال الخاص بالمباريات */}
+      <MatchModal
+        isOpen={isMatchModalOpen}
+        onClose={() => setIsMatchModalOpen(false)}
+        onSuccess={() => {
+          showToast(selectedMatch ? 'تم تحديث بيانات المباراة!' : 'تم جدولة المباراة بنجاح!');
+          fetchMatches();
+        }}
+        match={selectedMatch}
+        tournaments={tournaments}
+        teams={teams}
+      />
 
       {/* التنبيهات المنبثقة (Toasts) */}
       {toast && (

@@ -300,6 +300,8 @@ function GoalCard({
   const percent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
   const animDelay = index * 150;
 
+  const showResults = hasVoted;
+
   return (
     <div
       className="glass-card rounded-2xl overflow-hidden animate-fade-in-up"
@@ -361,29 +363,9 @@ function GoalCard({
       </div>
 
       {/* Vote section */}
-      <div className="px-4 pb-4">
-        {!hasVoted ? (
-          /* Pre-vote: show vote button */
-          <button
-            onClick={() => onVote(goal.id)}
-            disabled={isVoting}
-            className="w-full btn-trophy flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-            style={{ minHeight: 48 }}
-          >
-            {isVoting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-[#0e0e12]/40 border-t-[#0e0e12] rounded-full animate-spin" />
-                <span>جاري التسجيل...</span>
-              </>
-            ) : (
-              <>
-                <ThumbsUp className="w-4 h-4" />
-                <span>صوّت لهذا الهدف</span>
-              </>
-            )}
-          </button>
-        ) : (
-          /* Post-vote: show results */
+      <div className="px-4 pb-4 space-y-3">
+        {/* 1. Show results/standing after voting */}
+        {showResults && (
           <div className="space-y-2">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5">
@@ -410,6 +392,28 @@ function GoalCard({
             />
           </div>
         )}
+
+        {/* 2. Show vote button if user hasn't voted yet */}
+        {!hasVoted && (
+          <button
+            onClick={() => onVote(goal.id)}
+            disabled={isVoting}
+            className="w-full btn-trophy flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            style={{ minHeight: 48 }}
+          >
+            {isVoting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-[#0e0e12]/40 border-t-[#0e0e12] rounded-full animate-spin" />
+                <span>جاري التسجيل...</span>
+              </>
+            ) : (
+              <>
+                <ThumbsUp className="w-4 h-4" />
+                <span>صوّت لهذا الهدف</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -417,7 +421,13 @@ function GoalCard({
 
 // ─── Active Voting View ───────────────────────────────────────────────────────
 
-function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
+function ActiveVotingView({
+  goals,
+  roundTitle,
+}: {
+  goals: NominatedGoal[];
+  roundTitle: string;
+}) {
   const [hasVoted, setHasVoted] = useState(false);
   const [votedGoalId, setVotedGoalId] = useState<string | null>(null);
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
@@ -431,24 +441,24 @@ function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
     generateFingerprint().then((fp) => {
       setFingerprint(fp);
 
-      // Check if user already voted (stored locally)
-      const stored = localStorage.getItem(`ls_vote_${fp}`);
+      // Check if user already voted (stored locally for this roundTitle)
+      const stored = localStorage.getItem(`ls_vote_${roundTitle}_${fp}`);
       if (stored) {
         const data = JSON.parse(stored);
         setHasVoted(true);
-        setVotedGoalId(data.goalId);
+        setVotedGoalId(data.votingRoundGoalId);
         if (data.voteCounts) setVoteCounts(data.voteCounts);
       }
       setChecked(true);
     });
-  }, []);
+  }, [roundTitle]);
 
   const totalVotes = hasVoted
     ? goals.reduce((sum, g) => sum + (voteCounts[g.id] ?? g.voteCount), 0)
     : 0;
 
   const handleVote = useCallback(
-    async (goalId: string) => {
+    async (votingRoundGoalId: string) => {
       if (!fingerprint || isVoting || hasVoted) return;
       setIsVoting(true);
       setErrorMsg(null);
@@ -457,7 +467,7 @@ function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
         const res = await fetch("/api/vote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ goalId, fingerprint }),
+          body: JSON.stringify({ votingRoundGoalId, fingerprint }),
         });
 
         const data = await res.json();
@@ -466,7 +476,7 @@ function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
           if (data.error === "already_voted" || data.error === "already_voted_session") {
             setErrorMsg("لقد سبق وسجّلت صوتك في هذه الجولة");
             setHasVoted(true);
-            setVotedGoalId(goalId);
+            setVotedGoalId(votingRoundGoalId);
           } else {
             setErrorMsg("حدث خطأ، حاول مرة أخرى");
           }
@@ -474,13 +484,13 @@ function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
         }
 
         setHasVoted(true);
-        setVotedGoalId(goalId);
+        setVotedGoalId(votingRoundGoalId);
         setVoteCounts(data.voteCounts ?? {});
 
         // Persist to localStorage
         localStorage.setItem(
-          `ls_vote_${fingerprint}`,
-          JSON.stringify({ goalId, voteCounts: data.voteCounts ?? {} })
+          `ls_vote_${roundTitle}_${fingerprint}`,
+          JSON.stringify({ votingRoundGoalId, voteCounts: data.voteCounts ?? {} })
         );
       } catch {
         setErrorMsg("تعذّر الاتصال بالخادم، حاول مرة أخرى");
@@ -488,7 +498,7 @@ function ActiveVotingView({ goals }: { goals: NominatedGoal[] }) {
         setIsVoting(false);
       }
     },
-    [fingerprint, isVoting, hasVoted]
+    [fingerprint, isVoting, hasVoted, roundTitle]
   );
 
   if (!checked) {
@@ -713,7 +723,12 @@ export default function VotesClient({ data }: { data: VotingPageData }) {
   }
 
   if (data.state === "active") {
-    return <ActiveVotingView goals={data.goals} />;
+    return (
+      <ActiveVotingView
+        goals={data.goals}
+        roundTitle={data.roundTitle}
+      />
+    );
   }
 
   return <ArchiveView winners={data.winners} />;

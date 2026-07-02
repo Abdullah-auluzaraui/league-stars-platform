@@ -2,7 +2,8 @@ import { prisma } from "@/core/lib/prisma";
 import VotesClient from "./VotesClient";
 
 export type NominatedGoal = {
-  id: string;
+  id: string; // votingRoundGoalId
+  goalId: string;
   playerName: string;
   teamName: string;
   teamLogoUrl: string | null;
@@ -13,7 +14,7 @@ export type NominatedGoal = {
 };
 
 export type ArchivedWinner = {
-  id: string;
+  id: string; // roundId
   roundLabel: string;
   playerName: string;
   teamName: string;
@@ -24,65 +25,94 @@ export type ArchivedWinner = {
 
 export type VotingPageData =
   | { state: "empty" }
-  | { state: "active"; goals: NominatedGoal[] }
+  | { state: "active"; roundTitle: string; showResultsMode: string; goals: NominatedGoal[] }
   | { state: "archive"; winners: ArchivedWinner[] };
 
 async function getVotingData(): Promise<VotingPageData> {
   try {
-    const nominatedGoals = await prisma.goal.findMany({
-      where: { isNominated: true },
+    // 1. جلب الجولة النشطة حالياً
+    const activeRound = await prisma.votingRound.findFirst({
+      where: { status: "active" },
       include: {
-        player: { select: { name: true } },
-        team: { select: { name: true, logoUrl: true } },
-        votes: { select: { id: true } },
+        goals: {
+          include: {
+            goal: {
+              include: {
+                player: { select: { name: true } },
+                team: { select: { name: true, logoUrl: true } },
+              },
+            },
+            votes: { select: { id: true } },
+          },
+          orderBy: { sortOrder: "asc" },
+        },
       },
-      orderBy: { minute: "asc" },
     });
 
-    if (nominatedGoals.length > 0) {
-      const goals: NominatedGoal[] = nominatedGoals.map((goal) => ({
-        id: goal.id,
-        playerName: goal.player.name,
-        teamName: goal.team.name,
-        teamLogoUrl: goal.team.logoUrl,
-        videoUrl: goal.videoUrl,
-        minute: goal.minute,
-        type: goal.type,
-        voteCount: goal.votes.length,
+    if (activeRound) {
+      const goals: NominatedGoal[] = activeRound.goals.map((rg) => ({
+        id: rg.id, // معرف ربط الهدف بالجولة المستخدم للتصويت
+        goalId: rg.goalId,
+        playerName: rg.goal.player.name,
+        teamName: rg.goal.team.name,
+        teamLogoUrl: rg.goal.team.logoUrl,
+        videoUrl: rg.videoUrl || rg.goal.videoUrl,
+        minute: rg.goal.minute,
+        type: rg.goal.type,
+        voteCount: rg.votes.length,
       }));
 
-      return { state: "active", goals };
+      return {
+        state: "active",
+        roundTitle: activeRound.title,
+        showResultsMode: activeRound.showResultsMode,
+        goals,
+      };
     }
 
-    const pastWinners = await prisma.goal.findMany({
-      where: {
-        isNominated: false,
-        votes: { some: {} },
-      },
+    // 2. إذا لم تكن هناك جولة نشطة، نجلب الفائزين من الأرشيف
+    const archivedRounds = await prisma.votingRound.findMany({
+      where: { status: "archived" },
       include: {
-        player: { select: { name: true } },
-        team: { select: { name: true, logoUrl: true } },
-        votes: { select: { id: true } },
+        goals: {
+          include: {
+            goal: {
+              include: {
+                player: { select: { name: true } },
+                team: { select: { name: true, logoUrl: true } },
+              },
+            },
+            votes: { select: { id: true } },
+          },
+        },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { closedAt: "desc" },
     });
 
-    if (pastWinners.length > 0) {
-      const winners: ArchivedWinner[] = pastWinners.map((goal, index) => ({
-        id: goal.id,
-        roundLabel: `الجولة ${index + 1}`,
-        playerName: goal.player.name,
-        teamName: goal.team.name,
-        teamLogoUrl: goal.team.logoUrl,
-        videoUrl: goal.videoUrl,
-        totalVotes: goal.votes.length,
-      }));
+    const winners: ArchivedWinner[] = archivedRounds
+      .map((round) => {
+        const winnerGoalObj = round.goals.find((rg) => rg.goalId === round.winnerGoalId);
+        if (!winnerGoalObj) return null;
 
+        return {
+          id: round.id,
+          roundLabel: round.title,
+          playerName: winnerGoalObj.goal.player.name,
+          teamName: winnerGoalObj.goal.team.name,
+          teamLogoUrl: winnerGoalObj.goal.team.logoUrl,
+          videoUrl: winnerGoalObj.videoUrl || winnerGoalObj.goal.videoUrl,
+          totalVotes: winnerGoalObj.votes.length,
+        };
+      })
+      .filter(Boolean) as ArchivedWinner[];
+
+    if (winners.length > 0) {
       return { state: "archive", winners };
     }
 
     return { state: "empty" };
-  } catch {
+  } catch (error) {
+    console.error("Error fetching voting data:", error);
     return { state: "empty" };
   }
 }
@@ -106,7 +136,7 @@ export default async function VotesPage() {
         </div>
         <p className="text-white/40 text-sm font-medium pr-6">
           {data.state === "empty" && "في انتظار انطلاق المنافسات وترشيح الأهداف"}
-          {data.state === "active" && "صوّت للهدف الأجمل في الجولة الحالية"}
+          {data.state === "active" && `صوّت للهدف الأجمل في الجولة الحالية (${data.roundTitle})`}
           {data.state === "archive" && "سجل الأهداف الفائزة بجولات البطولة"}
         </p>
       </div>
