@@ -202,10 +202,10 @@ export default function PlayerModal({
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4">
       <div
-        className="w-full max-w-xl bg-[#0e0e12] border border-white/8 rounded-2xl shadow-2xl animate-scale-in"
+        className="w-full max-w-xl bg-[#0e0e12] border border-white/8 rounded-2xl shadow-2xl animate-scale-in max-h-[calc(100vh-2rem)] flex flex-col"
         dir="rtl"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#121018] rounded-t-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-[#121018] rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <UserCircle className="w-5 h-5 text-[#F0C040]" />
             <h3 className="text-sm sm:text-base font-black text-white">
@@ -221,7 +221,10 @@ export default function PlayerModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
