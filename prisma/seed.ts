@@ -49,13 +49,13 @@ async function deleteDemoRecords() {
     where: { name: { in: demoTeamNames } },
     select: { id: true },
   });
-  const demoTeamIds = demoTeams.map((team) => team.id);
+  const demoTeamIds = demoTeams.map((team: { id: string }) => team.id);
 
   const demoTournaments = await prisma.tournament.findMany({
     where: { name: { in: demoTournamentNames } },
     select: { id: true },
   });
-  const demoTournamentIds = demoTournaments.map((tournament) => tournament.id);
+  const demoTournamentIds = demoTournaments.map((tournament: { id: string }) => tournament.id);
 
   await prisma.goalVote.deleteMany({
     where: {
