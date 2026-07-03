@@ -68,7 +68,8 @@ export async function login(prevState: any, formData: FormData) {
     await setAuthCookie(token);
   } catch (error) {
     console.error('Login error:', error);
-    return { error: 'حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة لاحقاً' };
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { error: `خطأ في الاتصال: ${errorMessage}` };
   }
 
   // التوجيه إلى لوحة التحكم بعد نجاح تسجيل الدخول
