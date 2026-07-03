@@ -2,13 +2,20 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import { ActionError } from './validation';
 
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is missing in production!');
+let jwtSecretCache: Uint8Array | null = null;
+
+function getJwtSecret(): Uint8Array {
+  if (jwtSecretCache) return jwtSecretCache;
+  const secret = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production' && !secret) {
+    throw new Error('FATAL: JWT_SECRET environment variable is missing in production!');
+  }
+  jwtSecretCache = new TextEncoder().encode(
+    secret ?? 'fallback-secret-change-in-production-league-stars'
+  );
+  return jwtSecretCache;
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'fallback-secret-change-in-production-league-stars'
-);
 const COOKIE_NAME = 'adminToken';
 
 // ─── توليد JWT Token ─────────────────────────────────────────────────────────
@@ -21,13 +28,13 @@ export async function signToken(payload: {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 // ─── التحقق من JWT Token ─────────────────────────────────────────────────────
 export async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as { userId: string; username: string; role: string };
   } catch {
     return null;
