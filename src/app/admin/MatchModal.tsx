@@ -170,7 +170,14 @@ export default function MatchModal({
       formData.append('tournamentId', tournamentId);
       formData.append('homeTeamId', homeTeamId);
       formData.append('awayTeamId', awayTeamId);
-      formData.append('matchDate', matchDate);
+      
+      if (matchDate) {
+        const localDate = new Date(matchDate);
+        formData.append('matchDate', localDate.toISOString());
+      } else {
+        formData.append('matchDate', '');
+      }
+
       formData.append('venue', venue.trim());
       formData.append('stage', stage);
       if (stage === 'group' && groupName !== 'none') {
