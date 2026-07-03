@@ -57,6 +57,7 @@ import {
 import {
   getVotingRounds,
 } from './votingActions';
+import { logout } from '../admin-login/actions';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -1514,7 +1515,12 @@ export default function AdminClient({ username }: { username: string }) {
 
       {/* Logout */}
       <div className="pt-4 border-t border-white/6 mt-auto">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white/35 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200 cursor-pointer">
+        <button
+          onClick={async () => {
+            await logout();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white/35 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200 cursor-pointer"
+        >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           تسجيل الخروج
         </button>
