@@ -211,15 +211,15 @@ export default async function StandingsPage() {
   const data = await getStandingsData();
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8 animate-fade-in-up">
-        <div className="flex items-center gap-3 mb-2">
+    <div className="max-w-2xl mx-auto pb-20 md:max-w-none md:pb-0">
+      <div className="mb-5 md:mb-8 animate-fade-in-up">
+        <div className="flex items-center gap-2.5 md:gap-3 mb-1.5 md:mb-2">
           <span className="section-accent-line" />
-          <h1 className="text-2xl sm:text-3xl font-black text-gold-gradient tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-black text-gold-gradient tracking-tight">
             المنافسات والأرقام
           </h1>
         </div>
-        <p className="text-white/60 text-sm font-medium pr-6">
+        <p className="text-white/55 text-xs sm:text-sm font-medium pr-5 md:pr-6 leading-5">
           مسار البطولة · الفرق والتشكيلات · لائحة الهدافين
         </p>
       </div>

@@ -304,7 +304,7 @@ function GoalCard({
 
   return (
     <div
-      className="glass-card rounded-2xl overflow-hidden animate-fade-in-up"
+      className="glass-card rounded-2xl overflow-hidden animate-fade-in-up border border-white/5 hover:border-[#C9971A]/25 hover:shadow-2xl hover:shadow-black/45 transition-all duration-300 hover:-translate-y-0.5"
       style={{ animationDelay: `${animDelay}ms` }}
     >
       {/* Card header */}
@@ -567,19 +567,21 @@ function ActiveVotingView({
       )}
 
       {/* Goal cards */}
-      {goals.map((goal, i) => (
-        <GoalCard
-          key={goal.id}
-          goal={goal}
-          index={i}
-          hasVoted={hasVoted}
-          votedGoalId={votedGoalId}
-          voteCounts={voteCounts}
-          totalVotes={totalVotes}
-          onVote={handleVote}
-          isVoting={isVoting}
-        />
-      ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {goals.map((goal, i) => (
+          <GoalCard
+            key={goal.id}
+            goal={goal}
+            index={i}
+            hasVoted={hasVoted}
+            votedGoalId={votedGoalId}
+            voteCounts={voteCounts}
+            totalVotes={totalVotes}
+            onVote={handleVote}
+            isVoting={isVoting}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -592,7 +594,7 @@ function WinnerCard({ winner, index }: { winner: ArchivedWinner; index: number }
 
   return (
     <div
-      className={`${isFirst ? "glass-card-gold" : "glass-card"} rounded-2xl overflow-hidden animate-fade-in-up`}
+      className={`${isFirst ? "glass-card-gold border-[#C9971A]/35 hover:border-[#C9971A]/55" : "glass-card border-white/5 hover:border-white/12"} rounded-2xl overflow-hidden animate-fade-in-up border transition-all duration-300 hover:shadow-2xl hover:shadow-black/45 hover:-translate-y-0.5`}
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* Trophy banner for first */}
@@ -708,9 +710,11 @@ function ArchiveView({ winners }: { winners: ArchivedWinner[] }) {
         <Zap className="w-4 h-4 text-white/40 mr-auto flex-shrink-0" />
       </div>
 
-      {winners.map((winner, i) => (
-        <WinnerCard key={winner.id} winner={winner} index={i} />
-      ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {winners.map((winner, i) => (
+          <WinnerCard key={winner.id} winner={winner} index={i} />
+        ))}
+      </div>
     </div>
   );
 }

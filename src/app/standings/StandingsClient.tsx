@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import { Trophy, Star, Shield, X, Search } from "lucide-react";
-import type { StandingsData, TeamWithPlayers } from "./page";
+import type { StandingsData, TeamStanding, TeamWithPlayers } from "./page";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -95,14 +95,14 @@ function TabButton({ id, active, onClick, icon: Icon, label }: { id: string; act
     <button
       id={id}
       onClick={onClick}
-      className={`flex-1 flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+      className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[11px] font-bold transition-all duration-300 cursor-pointer sm:gap-2 sm:text-xs md:flex-1 md:px-3 ${
         active
           ? "text-[#F0C040] bg-[#C9971A]/15 border border-[#C9971A]/35"
           : "text-white/55 hover:text-white/70 border border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]"
       }`}
     >
-      <Icon className="w-4 h-4" />
-      <span className="leading-tight text-center">{label}</span>
+      <Icon className="h-4 w-4 flex-shrink-0" />
+      <span className="min-w-0 truncate leading-tight text-center">{label}</span>
     </button>
   );
 }
@@ -130,7 +130,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
       {groups.length > 0 && (
         <div>
           <p className="text-[11px] font-bold text-white/50 mb-3 tracking-widest uppercase">دور المجموعات</p>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {groups.map((group) => (
               <div key={group} className="glass-card rounded-2xl overflow-hidden animate-fade-in-up">
                 {/* Group header */}
@@ -149,16 +149,16 @@ function StandingsTab({ data }: { data: StandingsData }) {
 
                 {/* Column headers */}
                 <div
-                  className="px-3 py-1.5 grid text-[9px] font-black text-white/20 tracking-wider uppercase"
-                  style={{ gridTemplateColumns: "1fr 28px 28px 28px 28px 36px 36px 28px 36px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                  className="grid grid-cols-[1fr_34px_38px_40px] px-3 py-1.5 text-[9px] font-black text-white/20 tracking-wider uppercase md:grid-cols-[1fr_28px_28px_28px_28px_36px_36px_28px_36px]"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
                 >
                   <span>الفريق</span>
                   <span className="text-center">لع</span>
-                  <span className="text-center">ف</span>
-                  <span className="text-center">ت</span>
-                  <span className="text-center">خ</span>
-                  <span className="text-center">له</span>
-                  <span className="text-center">عه</span>
+                  <span className="hidden text-center md:block">ف</span>
+                  <span className="hidden text-center md:block">ت</span>
+                  <span className="hidden text-center md:block">خ</span>
+                  <span className="hidden text-center md:block">له</span>
+                  <span className="hidden text-center md:block">عه</span>
                   <span className="text-center">فا</span>
                   <span className="text-center font-black text-[#C9971A]/60">نق</span>
                 </div>
@@ -169,9 +169,8 @@ function StandingsTab({ data }: { data: StandingsData }) {
                   return (
                     <div
                       key={row.teamId}
-                      className="px-3 py-2.5 grid items-center"
+                      className="grid grid-cols-[1fr_34px_38px_40px] items-center px-3 py-2.5 md:grid-cols-[1fr_28px_28px_28px_28px_36px_36px_28px_36px]"
                       style={{
-                        gridTemplateColumns: "1fr 28px 28px 28px 28px 36px 36px 28px 36px",
                         borderBottom: idx < data.standings[group].length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                         background: isTop2 ? "rgba(201,151,26,0.04)" : "transparent",
                       }}
@@ -186,7 +185,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
                         </span>
                         {isTop2 && (
                           <div
-                            className="w-1 h-4 rounded-full flex-shrink-0"
+                            className="w-1 h-5 rounded-full flex-shrink-0"
                             style={{ background: "linear-gradient(to bottom, #F0C040, #C9971A)" }}
                           />
                         )}
@@ -194,11 +193,11 @@ function StandingsTab({ data }: { data: StandingsData }) {
                         <span className="text-xs font-bold text-white/85 truncate">{row.teamName}</span>
                       </div>
                       <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.played}</span>
-                      <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.won}</span>
-                      <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.drawn}</span>
-                      <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.lost}</span>
-                      <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.goalsFor}</span>
-                      <span className="text-center text-[11px] font-semibold text-white/45 score-number">{row.goalsAgainst}</span>
+                      <span className="hidden text-center text-[11px] font-semibold text-white/45 score-number md:block">{row.won}</span>
+                      <span className="hidden text-center text-[11px] font-semibold text-white/45 score-number md:block">{row.drawn}</span>
+                      <span className="hidden text-center text-[11px] font-semibold text-white/45 score-number md:block">{row.lost}</span>
+                      <span className="hidden text-center text-[11px] font-semibold text-white/45 score-number md:block">{row.goalsFor}</span>
+                      <span className="hidden text-center text-[11px] font-semibold text-white/45 score-number md:block">{row.goalsAgainst}</span>
                       <span
                         className="text-center text-[11px] font-bold score-number"
                         style={{ color: row.goalDiff > 0 ? "rgba(34,197,94,0.85)" : row.goalDiff < 0 ? "rgba(239,68,68,0.75)" : "rgba(255,255,255,0.35)" }}
@@ -348,7 +347,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
 
 interface TeamsTabProps {
   teams: TeamWithPlayers[];
-  standings: Record<string, any[]>;
+  standings: Record<string, TeamStanding[]>;
 }
 
 function TeamsTab({ teams, standings }: TeamsTabProps) {
@@ -405,7 +404,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
 
         {/* Group Filter Pills */}
         {groups.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hidden pb-1 sm:pb-0">
             <button
               onClick={() => setSelectedGroup("all")}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex-shrink-0 ${
@@ -440,26 +439,26 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
           <p className="text-white/50 font-semibold text-xs">لم نجد أي فريق يطابق بحثك</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 animate-fade-in-up">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 md:gap-3.5 animate-fade-in-up">
           {filteredTeams.map((team) => {
             const groupName = teamGroups[team.id];
             return (
               <div
                 key={team.id}
                 onClick={() => setActiveTeam(team)}
-                className="glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center hover-lift cursor-pointer group relative overflow-hidden"
+                className="glass-card rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center text-center hover-lift cursor-pointer group relative overflow-hidden min-h-[154px] md:min-h-0"
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-[#C9971A]/0 to-[#C9971A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 
                 <TeamAvatar name={team.name} logoUrl={team.logoUrl} size="lg" />
                 
-                <h3 className="text-xs sm:text-sm font-black text-white/90 mt-3.5 group-hover:text-[#F0C040] transition-colors duration-300">
+                <h3 className="text-xs sm:text-sm font-black text-white/90 mt-3 md:mt-3.5 group-hover:text-[#F0C040] transition-colors duration-300 leading-snug">
                   {team.name}
                 </h3>
                 
                 {groupName && (
                   <span
-                    className="text-[9px] font-bold px-2 py-0.5 rounded-full mt-2.5"
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full mt-2 md:mt-2.5"
                     style={{
                       background: "rgba(201,151,26,0.1)",
                       color: "#F0C040",
@@ -470,11 +469,11 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                   </span>
                 )}
                 
-                <span className="text-[10px] text-white/50 font-bold mt-2">
+                <span className="text-[10px] text-white/50 font-bold mt-1.5 md:mt-2">
                   {team.players.length} لاعب مسجل
                 </span>
 
-                <span className="text-[9px] font-bold text-[#F0C040]/0 group-hover:text-[#F0C040]/100 transition-all duration-300 mt-2 flex items-center gap-1">
+                <span className="hidden md:flex text-[9px] font-bold text-[#F0C040]/0 group-hover:text-[#F0C040]/100 transition-all duration-300 mt-2 items-center gap-1">
                   استعراض التشكيلة ←
                 </span>
               </div>
@@ -684,10 +683,7 @@ function TopScorersTab({ data }: { data: StandingsData }) {
       {/* Scorers List */}
       <div className="glass-card rounded-2xl overflow-hidden animate-fade-in-up" style={{ animationDelay: "60ms" }}>
         {/* Header */}
-        <div
-          className="px-4 py-3 grid text-[9px] font-black text-white/25 tracking-widest uppercase items-center"
-          style={{ gridTemplateColumns: "36px 1fr 120px 60px" }}
-        >
+        <div className="grid grid-cols-[32px_1fr_48px] px-3 py-3 text-[9px] font-black text-white/25 tracking-widest uppercase items-center md:grid-cols-[36px_1fr_140px_60px] md:px-4 [&>span:nth-child(3)]:hidden md:[&>span:nth-child(3)]:block">
           <span className="text-center">الترتيب</span>
           <span>اللاعب</span>
           <span>الفريق</span>
@@ -701,9 +697,8 @@ function TopScorersTab({ data }: { data: StandingsData }) {
           return (
             <div
               key={scorer.playerId}
-              className="px-4 py-3.5 grid items-center hover:bg-white/[0.02] transition-colors duration-200"
+              className="grid grid-cols-[32px_1fr_48px] items-center px-3 py-3.5 hover:bg-white/[0.02] transition-colors duration-200 md:grid-cols-[36px_1fr_140px_60px] md:px-4"
               style={{
-                gridTemplateColumns: "36px 1fr 120px 60px",
                 borderBottom: idx < scorers.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
               }}
             >
@@ -719,13 +714,14 @@ function TopScorersTab({ data }: { data: StandingsData }) {
               </div>
 
               {/* Player Name */}
-              <div className="min-w-0 pr-2">
+              <div className="min-w-0 pr-2 [&>p:last-child]:hidden md:[&>p:last-child]:block">
                 <p className="text-xs font-bold text-white/90 truncate">{cleanPlayerName(scorer.playerName)}</p>
+                <p className="text-[10px] text-white/50 font-semibold mt-0.5 truncate md:hidden">{scorer.teamName}</p>
                 <p className="text-[10px] text-white/50 font-semibold mt-0.5">لاعب مسجل</p>
               </div>
 
               {/* Team Info */}
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="hidden items-center gap-2 min-w-0 md:flex">
                 <TeamAvatar name={scorer.teamName} logoUrl={scorer.logoUrl} size="sm" />
                 <span className="text-xs font-bold text-white/80 truncate">{scorer.teamName}</span>
               </div>
@@ -768,7 +764,7 @@ export default function StandingsClient({ data }: { data: StandingsData }) {
     <div>
       {/* ── Tab Bar ── */}
       <div
-        className="flex gap-2 mb-6 p-1.5 rounded-2xl animate-fade-in-up"
+        className="mb-5 grid grid-cols-3 gap-1.5 rounded-2xl p-1.5 animate-fade-in-up md:mb-6 md:flex md:gap-2"
         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
       >
         {tabs.map((tab) => (

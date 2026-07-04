@@ -28,7 +28,7 @@ function AnimatedNumber({ value, duration = 1500 }: StatItemProps) {
     window.requestAnimationFrame(step);
   }, [value, duration]);
 
-  return <span className="text-2xl font-black text-[#F0C040] font-outfit score-number leading-none">{current}</span>;
+  return <span className="text-xl md:text-2xl font-black text-[#F0C040] font-outfit score-number leading-none">{current}</span>;
 }
 
 export default function HeroStats({
@@ -41,24 +41,24 @@ export default function HeroStats({
   matches?: number;
 }) {
   return (
-    <div className="relative z-10 flex items-center gap-8 mt-8 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-      <div className="flex flex-col items-center gap-1">
+    <div className="relative z-10 grid grid-cols-3 gap-2 w-full max-w-[350px] mt-6 md:mt-8 md:flex md:w-auto md:max-w-none md:items-center md:gap-8 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+      <div className="flex flex-col items-center gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.035] px-2 py-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
         <AnimatedNumber value={goals} />
-        <span className="flex items-center gap-1 text-[11px] text-white/55 font-semibold">
+        <span className="flex items-center gap-1 text-[10px] md:text-[11px] text-white/55 font-semibold whitespace-nowrap">
           <Target className="w-3 h-3" />
           هدف مسجل
         </span>
       </div>
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.035] px-2 py-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
         <AnimatedNumber value={teams} />
-        <span className="flex items-center gap-1 text-[11px] text-white/55 font-semibold">
+        <span className="flex items-center gap-1 text-[10px] md:text-[11px] text-white/55 font-semibold whitespace-nowrap">
           <Users className="w-3 h-3" />
           فريق منافس
         </span>
       </div>
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.035] px-2 py-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
         <AnimatedNumber value={matches} />
-        <span className="flex items-center gap-1 text-[11px] text-white/55 font-semibold">
+        <span className="flex items-center gap-1 text-[10px] md:text-[11px] text-white/55 font-semibold whitespace-nowrap">
           <Activity className="w-3 h-3" />
           مباراة
         </span>

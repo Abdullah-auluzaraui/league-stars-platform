@@ -97,13 +97,10 @@ export default async function RootLayout({
         {/* الحاوية الرئيسية */}
         <div className="relative min-h-screen w-full flex flex-col">
           
-          {/* تأثير التوهج العلوي */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[400px] bg-glow-radial pointer-events-none z-0" />
-
           {/* الهيدر — كبسولة عائمة فخمة ثابتة */}
           <NavVisibilityWrapper>
             <header
-              className="fixed top-0 md:top-4 left-0 right-0 z-50 w-full md:max-w-2xl md:mx-auto transition-all duration-300 md:rounded-2xl"
+              className="fixed top-0 md:top-4 left-0 right-0 z-50 w-full md:max-w-5xl md:mx-auto transition-all duration-300 md:rounded-2xl"
               style={{
                 background: 'rgba(12, 12, 18, 0.85)',
                 backdropFilter: 'blur(24px)',
@@ -112,7 +109,7 @@ export default async function RootLayout({
                 boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
               }}
             >
-              <div className="max-w-2xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+              <div className="max-w-5xl mx-auto px-4 md:px-6 h-14 sm:h-16 flex items-center justify-between">
                 
                 {/* الشعار */}
                 <Link href="/" className="flex items-center gap-2.5 group">
@@ -146,7 +143,7 @@ export default async function RootLayout({
           </NavVisibilityWrapper>
 
           {/* محتوى الصفحة مع إزاحة علوية لمنع التداخل مع الهيدر الثابت */}
-          <main className="flex-grow relative z-10 w-full mx-auto px-4 sm:px-6 pt-20 md:pt-28 pb-8 md:pb-10 box-border">
+          <main className="flex-grow relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-20 md:pt-28 pb-8 md:pb-10 box-border">
             {children}
           </main>
 
@@ -163,7 +160,7 @@ export default async function RootLayout({
                 backdropFilter: 'blur(12px)',
               }}
             >
-              <div className="max-w-2xl mx-auto px-4 text-center">
+              <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="relative w-7 h-7">
                     <Image

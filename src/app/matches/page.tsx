@@ -75,17 +75,23 @@ export default async function MatchesPage() {
   const matches = await getMatchesData();
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8 animate-fade-in-up">
-        <div className="flex items-center gap-3 mb-2">
+    <div className="max-w-2xl mx-auto pb-20 md:max-w-none md:w-full md:pb-0">
+      <div className="mb-5 md:mb-10 animate-fade-in-up md:flex md:items-end md:justify-between md:gap-8">
+        <div>
+        <div className="flex items-center gap-2.5 md:gap-3 mb-1.5 md:mb-2">
           <span className="section-accent-line" />
-          <h1 className="text-2xl sm:text-3xl font-black text-gold-gradient tracking-tight">
+          <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-gold-gradient tracking-tight">
             المباريات والنتائج
           </h1>
         </div>
-        <p className="text-white/60 text-sm font-medium pr-6">
+        <p className="text-white/55 text-xs sm:text-sm md:text-base font-medium pr-5 md:pr-6 md:max-w-2xl leading-5">
           متابعة حية للمباريات مع تفاصيل الأهداف والبطاقات
         </p>
+        </div>
+        <div className="hidden md:flex items-center gap-2 rounded-full border border-[#C9971A]/25 bg-[#C9971A]/10 px-4 py-2 text-xs font-black text-[#F0C040]">
+          <span className="live-dot" />
+          <span>تجربة متابعة مباشرة</span>
+        </div>
       </div>
 
       <MatchesClient matches={matches} />

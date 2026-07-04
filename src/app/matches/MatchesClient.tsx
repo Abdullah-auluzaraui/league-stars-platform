@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { MapPin, Clock, ChevronDown, ChevronUp, Goal, Shield, AlertTriangle, Zap, Calendar, Tv } from 'lucide-react';
+import { MapPin, Clock, ChevronDown, ChevronUp, Zap, Calendar, Tv } from 'lucide-react';
 import type { MatchWithEvents } from './page';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -64,15 +64,15 @@ const STATUS_FILTERS: { value: FilterStatus; label: string }[] = [
 // ─── TeamAvatar ────────────────────────────────────────────────────────────────
 
 function TeamAvatar({ name, logoUrl, size = 'md' }: { name: string; logoUrl: string | null; size?: 'sm' | 'md' }) {
-  const dim = size === 'sm' ? 32 : 42;
+  const sizeClass = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10 sm:w-[42px] sm:h-[42px] md:w-14 md:h-14';
   const textSize = size === 'sm' ? 'text-[10px]' : 'text-xs';
   return (
     <div
-      className={`relative rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0`}
-      style={{ width: dim, height: dim, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+      className={`relative ${sizeClass} rounded-xl md:rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 md:shadow-[0_12px_30px_rgba(0,0,0,0.35)]`}
+      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
     >
       {logoUrl ? (
-        <Image src={logoUrl} alt={name} fill sizes={`${dim}px`} className="object-contain p-1" />
+        <Image src={logoUrl} alt={name} fill sizes={size === 'sm' ? '32px' : '(min-width: 768px) 56px, 42px'} className="object-contain p-1" />
       ) : (
         <span className={`${textSize} font-black text-white/70`}>{getInitials(name)}</span>
       )}
@@ -155,21 +155,23 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
   const isFinished = match.status === 'finished';
   const hasEvents = match.goals.length > 0 || match.cards.length > 0;
   const hasPenalty = match.homePenalty !== null && match.awayPenalty !== null;
+  const hasStream = isLive && Boolean(match.streamUrl);
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden animate-fade-in-up ${
+      className={`rounded-2xl md:rounded-[26px] overflow-hidden animate-fade-in-up border transition-all duration-300 md:hover:shadow-2xl md:hover:shadow-black/45 md:hover:-translate-y-1 ${
         isLive
-          ? 'glass-card-burgundy match-live-glow'
+          ? 'glass-card-burgundy match-live-glow border-red-500/25 hover:border-red-500/45'
           : match.status === 'scheduled'
-          ? 'glass-card-gold match-upcoming-glow'
-          : 'glass-card'
-      }`}
+          ? 'glass-card-gold match-upcoming-glow border-[#C9971A]/25 hover:border-[#C9971A]/45'
+          : 'glass-card border-white/5 hover:border-white/12'
+      } ${hasStream ? 'md:col-span-2' : ''}`}
       style={{ animationDelay: `${index * 60}ms` }}
     >
-      <div className="p-4">
+      <div className={`p-3.5 sm:p-4 md:p-6 ${hasStream ? 'md:grid md:grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] md:gap-6 md:items-start' : ''}`}>
+        <div className="min-w-0">
         {/* ── Meta row ── */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3 md:mb-5">
           <div className="flex items-center gap-1.5">
             {isLive ? (
               <span className="live-badge">
@@ -193,35 +195,35 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/50 font-medium">
+          <div className="flex min-w-0 items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-white/50 font-medium">
             {match.groupName && <span>المجموعة {match.groupName}</span>}
             {match.groupName && <span>·</span>}
-            <span>{getStageName(match.stage)}</span>
+            <span className="truncate">{getStageName(match.stage)}</span>
           </div>
         </div>
 
         {/* ── Teams & Score ── */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-2.5 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_minmax(116px,150px)_minmax(0,1fr)] md:gap-5 md:rounded-2xl md:bg-white/[0.025] md:border md:border-white/[0.055] md:px-5 md:py-5">
           {/* Home team */}
-          <div className="flex flex-col items-center gap-1.5 flex-1">
+          <div className="flex flex-col items-center gap-1.5 md:gap-3 flex-1 min-w-0">
             <TeamAvatar name={match.homeTeam.name} logoUrl={match.homeTeam.logoUrl} />
-            <span className="text-xs font-bold text-white/80 text-center leading-tight line-clamp-2">{match.homeTeam.name}</span>
+            <span className="text-[11px] sm:text-xs md:text-base font-bold text-white/80 md:text-white/90 text-center leading-tight line-clamp-2">{match.homeTeam.name}</span>
           </div>
 
           {/* Score / VS */}
-          <div className="flex flex-col items-center gap-0.5 flex-shrink-0 px-2">
+          <div className="flex flex-col items-center gap-0.5 md:gap-1 flex-shrink-0 min-w-[82px] px-1 md:min-w-0 md:px-0">
             {isLive || isFinished ? (
               <>
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-3xl sm:text-4xl font-black score-number"
+                    className="text-2xl sm:text-3xl md:text-5xl font-black score-number"
                     style={{ color: isLive ? '#fc8181' : '#F3EED9', textShadow: isLive ? '0 0 20px rgba(239,68,68,0.4)' : 'none' }}
                   >
                     {match.homeScore ?? 0}
                   </span>
-                  <span className="text-xl font-medium text-white/40">:</span>
+                  <span className="text-lg sm:text-xl font-medium text-white/40">:</span>
                   <span
-                    className="text-3xl sm:text-4xl font-black score-number"
+                    className="text-2xl sm:text-3xl md:text-5xl font-black score-number"
                     style={{ color: isLive ? '#fc8181' : '#F3EED9', textShadow: isLive ? '0 0 20px rgba(239,68,68,0.4)' : 'none' }}
                   >
                     {match.awayScore ?? 0}
@@ -242,22 +244,22 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               </>
             ) : (
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-sm font-black text-white/40">VS</span>
-                <span className="text-[11px] text-white/55 font-medium">{formatTime(match.matchDate)}</span>
+                <span className="text-sm md:text-xl font-black text-white/40">VS</span>
+                <span className="text-[11px] md:text-sm text-white/55 font-medium score-number">{formatTime(match.matchDate)}</span>
               </div>
             )}
           </div>
 
           {/* Away team */}
-          <div className="flex flex-col items-center gap-1.5 flex-1">
+          <div className="flex flex-col items-center gap-1.5 md:gap-3 flex-1 min-w-0">
             <TeamAvatar name={match.awayTeam.name} logoUrl={match.awayTeam.logoUrl} />
-            <span className="text-xs font-bold text-white/80 text-center leading-tight line-clamp-2">{match.awayTeam.name}</span>
+            <span className="text-[11px] sm:text-xs md:text-base font-bold text-white/80 md:text-white/90 text-center leading-tight line-clamp-2">{match.awayTeam.name}</span>
           </div>
         </div>
 
         {/* ── Venue + Date row ── */}
         {(match.venue || isFinished) && (
-          <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-white/50 font-medium">
+          <div className="flex items-center justify-center gap-2.5 md:gap-3 mt-3 md:mt-4 text-[10px] md:text-xs text-white/50 font-medium">
             {match.venue && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
@@ -277,8 +279,34 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
         )}
 
         {/* ── Livestream Toggle/Player ── */}
+        {hasEvents && (
+          <button
+            id={`match-details-toggle-${match.id}`}
+            onClick={() => setExpanded((v) => !v)}
+            className="w-full mt-3 md:mt-4 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-300 hover:bg-white/[0.04] cursor-pointer"
+            style={{ color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'إخفاء أحداث المباراة' : 'عرض أحداث المباراة'}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="w-3 h-3" />
+                <span>إخفاء الأحداث</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3 h-3" />
+                <span>عرض الأحداث ({match.goals.length + match.cards.length})</span>
+              </>
+            )}
+          </button>
+        )}
+
+        {expanded && hasEvents && <MatchTimeline match={match} />}
+        </div>
+
         {isLive && match.streamUrl && (
-          <div className="mt-4 border-t border-white/5 pt-4">
+          <div className="mt-3 md:mt-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
             {!showStream ? (
               <button
                 onClick={() => setShowStream(true)}
@@ -310,7 +338,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
                 </div>
                 
                 {getYouTubeId(match.streamUrl) ? (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black">
+                  <div className="relative w-full aspect-video rounded-xl md:rounded-2xl overflow-hidden border border-white/10 bg-black md:shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
                     <iframe
                       src={`https://www.youtube.com/embed/${getYouTubeId(match.streamUrl)}?autoplay=1`}
                       title="YouTube Live Stream"
@@ -338,32 +366,6 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
           </div>
         )}
 
-        {/* ── Expand / Collapse toggle ── */}
-        {hasEvents && (
-          <button
-            id={`match-details-toggle-${match.id}`}
-            onClick={() => setExpanded((v) => !v)}
-            className="w-full mt-3 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-300 hover:bg-white/[0.04] cursor-pointer"
-            style={{ color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}
-            aria-expanded={expanded}
-            aria-label={expanded ? 'إخفاء أحداث المباراة' : 'عرض أحداث المباراة'}
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="w-3 h-3" />
-                <span>إخفاء الأحداث</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3 h-3" />
-                <span>عرض الأحداث ({match.goals.length + match.cards.length})</span>
-              </>
-            )}
-          </button>
-        )}
-
-        {/* ── Timeline (expandable) ── */}
-        {expanded && hasEvents && <MatchTimeline match={match} />}
       </div>
     </div>
   );
@@ -428,78 +430,124 @@ export default function MatchesClient({ matches }: { matches: MatchWithEvents[] 
     finished: matches.filter((m) => m.status === 'finished').length,
   }), [matches]);
 
-  return (
-    <div>
-      {/* ── Status Filters ── */}
-      <div className="flex gap-2 mb-4 flex-wrap animate-fade-in-up" style={{ animationDelay: '60ms' }}>
-        {STATUS_FILTERS.map((f) => {
-          const isActive = activeFilter === f.value;
-          const count = counts[f.value];
-          return (
-            <button
-              key={f.value}
-              id={`filter-${f.value}`}
-              onClick={() => setActiveFilter(f.value)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${
-                isActive
-                  ? f.value === 'live'
-                    ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                    : 'bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/40'
-                  : 'text-white/35 hover:text-white/70 border border-white/[0.06] hover:border-white/15 bg-white/[0.03]'
-              }`}
-            >
-              {f.value === 'live' && isActive && <span className="live-dot w-1.5 h-1.5" />}
-              {f.label}
-              {count > 0 && (
-                <span
-                  className={`text-[10px] font-black px-1.5 py-0.5 rounded-full score-number ${
-                    isActive ? 'bg-white/10 text-white/70' : 'bg-white/[0.05] text-white/20'
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+  const nextScheduled = useMemo(() => {
+    return matches
+      .filter((m) => m.status === 'scheduled')
+      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0];
+  }, [matches]);
 
-      {/* ── Group Filters (if multiple groups exist) ── */}
-      {groups.length > 1 && (
-        <div className="flex gap-1.5 mb-5 flex-wrap animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-          <button
-            id="group-filter-all"
-            onClick={() => setActiveGroup('all')}
-            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 cursor-pointer ${
-              activeGroup === 'all'
-                ? 'bg-white/10 text-white border border-white/20'
-                : 'text-white/25 hover:text-white/50 border border-white/[0.05]'
-            }`}
-          >
-            جميع المجموعات
-          </button>
-          {groups.map((g) => (
-            <button
-              key={g}
-              id={`group-filter-${g}`}
-              onClick={() => setActiveGroup(g)}
-              className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 cursor-pointer ${
-                activeGroup === g
-                  ? 'bg-white/10 text-white border border-white/20'
-                  : 'text-white/25 hover:text-white/50 border border-white/[0.05]'
-              }`}
-            >
-              المجموعة {g}
-            </button>
-          ))}
+  return (
+    <div className="space-y-6 md:space-y-8">
+      {nextScheduled && (
+        <div className="rounded-2xl border border-white/[0.07] bg-black/15 px-3 py-2.5 md:hidden animate-fade-in-up" style={{ animationDelay: '30ms' }}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] font-bold text-white/45">أقرب مباراة</span>
+            <span className="text-[11px] font-black text-[#F0C040] score-number">{formatTime(nextScheduled.matchDate)}</span>
+          </div>
+          <p className="mt-1 truncate text-xs font-black text-white/85">
+            {nextScheduled.homeTeam.name} <span className="text-white/35">VS</span> {nextScheduled.awayTeam.name}
+          </p>
         </div>
       )}
+
+      <div className="hidden md:block animate-fade-in-up" style={{ animationDelay: '30ms' }}>
+        <div className="rounded-[26px] border border-white/[0.07] bg-[linear-gradient(145deg,rgba(201,151,26,0.08),rgba(255,255,255,0.025))] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.24)]">
+          <p className="text-xs font-bold text-white/45">المباراة القادمة</p>
+          {nextScheduled ? (
+            <div className="mt-3 flex items-center justify-between gap-6">
+              <div className="min-w-0">
+                <p className="truncate text-lg font-black text-white">
+                  {nextScheduled.homeTeam.name} <span className="text-white/35">VS</span> {nextScheduled.awayTeam.name}
+                </p>
+                <p className="mt-1.5 text-xs font-semibold text-white/45">
+                  {formatDate(nextScheduled.matchDate)} · {formatTime(nextScheduled.matchDate)}
+                </p>
+              </div>
+              <span className="rounded-full border border-[#C9971A]/35 bg-[#C9971A]/15 px-3 py-1 text-xs font-black text-[#F0C040] score-number">
+                {nextScheduled.groupName ? `المجموعة ${nextScheduled.groupName}` : getStageName(nextScheduled.stage)}
+              </span>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm font-bold text-white/55">لا توجد مباريات مجدولة حالياً</p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Filters Section (Desktop: Row / Mobile: Column) ── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-4 md:mb-2 md:rounded-[24px] md:border md:border-white/[0.06] md:bg-black/15 md:p-3">
+
+        {/* Status Filters */}
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 animate-fade-in-up scrollbar-hidden md:order-2 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0" style={{ animationDelay: '60ms' }}>
+          {STATUS_FILTERS.map((f) => {
+            const isActive = activeFilter === f.value;
+            const count = counts[f.value];
+            return (
+              <button
+                key={f.value}
+                id={`filter-${f.value}`}
+                onClick={() => setActiveFilter(f.value)}
+                className={`flex shrink-0 items-center gap-1.5 px-3.5 md:px-4 py-2 md:py-2 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${
+                  isActive
+                    ? f.value === 'live'
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                      : 'bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/40 shadow-[0_0_12px_rgba(201,151,26,0.1)]'
+                    : 'text-white/35 hover:text-white/70 border border-white/[0.06] hover:border-white/15 bg-white/[0.03]'
+                }`}
+              >
+                {f.value === 'live' && isActive && <span className="live-dot w-1.5 h-1.5" />}
+                {f.label}
+                {count > 0 && (
+                  <span
+                    className={`text-[10px] font-black px-1.5 py-0.5 rounded-full score-number ${
+                      isActive ? 'bg-white/10 text-white/70' : 'bg-white/[0.05] text-white/20'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Group Filters */}
+        {groups.length > 1 && (
+          <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 animate-fade-in-up scrollbar-hidden md:order-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0" style={{ animationDelay: '100ms' }}>
+            <button
+              id="group-filter-all"
+              onClick={() => setActiveGroup('all')}
+              className={`shrink-0 px-3.5 py-2 md:py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                activeGroup === 'all'
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'text-white/25 hover:text-white/50 border border-white/[0.05] bg-white/[0.01]'
+              }`}
+            >
+              جميع المجموعات
+            </button>
+            {groups.map((g) => (
+              <button
+                key={g}
+                id={`group-filter-${g}`}
+                onClick={() => setActiveGroup(g)}
+                className={`shrink-0 px-3.5 py-2 md:py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  activeGroup === g
+                    ? 'bg-white/10 text-white border border-white/20'
+                    : 'text-white/25 hover:text-white/50 border border-white/[0.05] bg-white/[0.01]'
+                }`}
+              >
+                المجموعة {g}
+              </button>
+            ))}
+          </div>
+        )}
+
+      </div>
 
       {/* ── Matches List ── */}
       {sorted.length === 0 ? (
         <EmptyState filter={activeFilter} />
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-4">
           {sorted.map((match, i) => (
             <MatchCard key={match.id} match={match} index={i} />
           ))}

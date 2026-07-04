@@ -126,7 +126,7 @@ export default async function VotesPage() {
   const data = await getVotingData();
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto md:max-w-none">
       <div className="mb-8 animate-fade-in-up">
         <div className="flex items-center gap-3 mb-2">
           <span className="section-accent-line" />
