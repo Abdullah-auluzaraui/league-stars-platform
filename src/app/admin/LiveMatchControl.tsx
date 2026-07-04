@@ -14,6 +14,7 @@ import {
   Timer,
   Info,
   X,
+  Tv,
 } from 'lucide-react';
 import {
   startMatch,
@@ -23,6 +24,7 @@ import {
   recordCard,
   deleteCard,
   updatePenaltyScore,
+  updateMatchStreamUrl,
 } from './matchActions';
 
 interface LiveMatchControlProps {
@@ -52,6 +54,9 @@ export default function LiveMatchControl({
   // ركلات الترجيح
   const [homePenalties, setHomePenalties] = useState<string>('');
   const [awayPenalties, setAwayPenalties] = useState<string>('');
+
+  // رابط البث المباشر
+  const [streamUrlInput, setStreamUrlInput] = useState('');
 
   // إغلاق القوائم المنسدلة للحدث
   const [playerDropdownOpen, setPlayerDropdownOpen] = useState(false);
@@ -93,6 +98,15 @@ export default function LiveMatchControl({
       }
     }
   }, [matches, selectedMatchId, liveOrUpcomingMatches]);
+
+  // تحديث حقل رابط البث عند تغيير المباراة المحددة
+  useEffect(() => {
+    if (activeMatch) {
+      setStreamUrlInput(activeMatch.streamUrl || '');
+    } else {
+      setStreamUrlInput('');
+    }
+  }, [selectedMatchId, activeMatch?.id]);
 
   if (matches.length === 0) {
     return (
@@ -225,6 +239,27 @@ export default function LiveMatchControl({
         setActiveModal(null);
       } else {
         showToast(res.error || 'فشل التحديث', 'error');
+      }
+    } catch (err) {
+      showToast('حدث خطأ غير متوقع', 'error');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // إرسال رابط البث المباشر
+  const handleStreamSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMatchId) return;
+
+    setLoadingAction('update_stream');
+    try {
+      const res = await updateMatchStreamUrl(selectedMatchId, streamUrlInput.trim());
+      if (res.success) {
+        showToast('تم تحديث رابط البث المباشر بنجاح!');
+        fetchMatches();
+      } else {
+        showToast(res.error || 'فشل تحديث رابط البث', 'error');
       }
     } catch (err) {
       showToast('حدث خطأ غير متوقع', 'error');
@@ -516,6 +551,52 @@ export default function LiveMatchControl({
                 )}
               </div>
             </div>
+
+            {/* رابط البث المباشر للمباراة */}
+            {activeMatch.status !== 'finished' && (
+              <div className="glass-card rounded-2xl p-4 border border-white/5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                      <Tv className="w-3.5 h-3.5 text-[#F0C040]" />
+                      <span>رابط البث المباشر للمباراة (يوتيوب)</span>
+                    </h4>
+                  </div>
+                  {activeMatch.streamUrl && (
+                    <a
+                      href={activeMatch.streamUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-[#F0C040] hover:underline"
+                    >
+                      مشاهدة البث الحالي ↗
+                    </a>
+                  )}
+                </div>
+                <form onSubmit={handleStreamSubmit} className="flex gap-2">
+                  <input
+                    type="url"
+                     placeholder="مثال: https://www.youtube.com/watch?v=xxxxxx"
+                    value={streamUrlInput}
+                    onChange={(e) => setStreamUrlInput(e.target.value)}
+                    className="flex-grow px-3 py-2 bg-[#0e0e12] border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 transition-all text-left"
+                    dir="ltr"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loadingAction === 'update_stream'}
+                    className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-l from-[#C9971A] to-[#A07510] rounded-xl hover:shadow-lg active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0 flex items-center justify-center min-w-[64px]"
+                  >
+                    {loadingAction === 'update_stream' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <span>حفظ</span>
+                    )}
+                  </button>
+                </form>
+              </div>
+            )}
 
             {/* نظام الإدخال المنقسم (Home / Away) - متاح فقط أثناء المباراة الجارية */}
             {activeMatch.status === 'live' ? (

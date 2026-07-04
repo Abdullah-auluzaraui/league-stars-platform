@@ -33,6 +33,7 @@ const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
 import './globals.css';
 import { DesktopNav, MobileNav } from './components/Navigation';
 import NavVisibilityWrapper from './components/NavVisibilityWrapper';
+import PreviewBar from './components/PreviewBar';
 
 const elMessiri = El_Messiri({
   subsets: ['arabic'],
@@ -90,6 +91,9 @@ export default async function RootLayout({
     >
       <body className="bg-[#0e0e12] text-[#F3EED9] min-h-screen antialiased selection:bg-[#C9971A]/30 selection:text-[#F3EED9] overflow-x-hidden">
         
+        {/* شريط معاينة المشرف */}
+        <PreviewBar />
+
         {/* الحاوية الرئيسية */}
         <div className="relative min-h-screen w-full flex flex-col">
           

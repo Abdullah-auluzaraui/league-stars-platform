@@ -114,6 +114,7 @@ model Match {
   stage        String    @default("group")     // group | round_16 | quarter | semi | final
   groupName    String?
   venue        String?
+  streamUrl    String?
   matchDate    DateTime
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

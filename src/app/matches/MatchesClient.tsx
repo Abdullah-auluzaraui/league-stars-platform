@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { MapPin, Clock, ChevronDown, ChevronUp, Goal, Shield, AlertTriangle, Zap, Calendar } from 'lucide-react';
+import { MapPin, Clock, ChevronDown, ChevronUp, Goal, Shield, AlertTriangle, Zap, Calendar, Tv } from 'lucide-react';
 import type { MatchWithEvents } from './page';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -17,6 +17,13 @@ function formatTime(dateStr: string) {
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function getYouTubeId(url: string | null): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
 }
 
 function formatDateShort(dateStr: string) {
@@ -143,6 +150,7 @@ function MatchTimeline({ match }: { match: MatchWithEvents }) {
 
 function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) {
   const [expanded, setExpanded] = useState(match.status === 'live');
+  const [showStream, setShowStream] = useState(match.status === 'live');
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
   const hasEvents = match.goals.length > 0 || match.cards.length > 0;
@@ -264,6 +272,68 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
                   {formatDate(match.matchDate)}
                 </span>
               </>
+            )}
+          </div>
+        )}
+
+        {/* ── Livestream Toggle/Player ── */}
+        {isLive && match.streamUrl && (
+          <div className="mt-4 border-t border-white/5 pt-4">
+            {!showStream ? (
+              <button
+                onClick={() => setShowStream(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-l from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white rounded-xl text-xs font-bold transition-all hover:shadow-lg hover:shadow-red-900/20 active:scale-[0.98] cursor-pointer"
+              >
+                <Tv className="w-4 h-4 text-white" />
+                <span>عرض البث المباشر للمباراة</span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-red-400 flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span>بث مباشر جاري الآن</span>
+                  </span>
+                  <button
+                    onClick={() => setShowStream(false)}
+                    className="text-[10px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer"
+                  >
+                    إغلاق البث
+                  </button>
+                </div>
+                
+                {getYouTubeId(match.streamUrl) ? (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYouTubeId(match.streamUrl)}?autoplay=1`}
+                      title="YouTube Live Stream"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full border-0"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 bg-white/2 border border-white/5 rounded-xl text-center">
+                    <p className="text-xs text-white/60 mb-2 font-semibold">رابط البث غير مدعوم للمشاهدة المباشرة بداخل الصفحة.</p>
+                    <a
+                      href={match.streamUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-[#F0C040] hover:underline"
+                    >
+                      <span>الذهاب لرابط البث المباشر</span>
+                      <span>↗</span>
+                    </a>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

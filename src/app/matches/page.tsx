@@ -7,6 +7,7 @@ export type MatchWithEvents = {
   stage: string;
   groupName: string | null;
   venue: string | null;
+  streamUrl: string | null;
   matchDate: string;
   homeScore: number | null;
   awayScore: number | null;

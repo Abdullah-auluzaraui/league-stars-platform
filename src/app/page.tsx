@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Trophy, Calendar, ChevronLeft,
-  Star, Vote, Zap, Eye,
+  Star, Vote, Zap, Eye, Tv
 } from 'lucide-react';
 import HeroStats from './components/HeroStats';
 
@@ -109,6 +109,7 @@ type MatchData = {
   awayScore: number | null;
   matchDate: Date | string;
   venue: string;
+  streamUrl?: string | null;
   homeTeam: { name: string; logoUrl: string | null };
   awayTeam: { name: string; logoUrl: string | null };
 };
@@ -138,10 +139,18 @@ function MatchCard({ match, delay = 0 }: { match: MatchData; delay?: number }) {
           {match.venue}
         </span>
         {isLive && (
-          <span className="live-badge">
-            <span className="live-dot" />
-            مباشر
-          </span>
+          <div className="flex items-center gap-1.5">
+            {match.streamUrl && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black text-red-400 bg-red-500/10 border border-red-500/20 animate-pulse">
+                <Tv className="w-2.5 h-2.5" />
+                البث المباشر متوفر
+              </span>
+            )}
+            <span className="live-badge">
+              <span className="live-dot" />
+              مباشر
+            </span>
+          </div>
         )}
         {isScheduled && (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#F0C040] bg-[#C9971A]/12 border border-[#C9971A]/35 px-2.5 py-1 rounded-full">

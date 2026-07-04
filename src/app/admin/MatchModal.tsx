@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Swords, Trophy, MapPin, Calendar, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
+import { X, Swords, Trophy, MapPin, Calendar, Loader2, ChevronDown, AlertCircle, Tv } from 'lucide-react';
 import { scheduleMatch, updateMatchSettings } from './matchActions';
 
 interface MatchModalProps {
@@ -32,6 +32,7 @@ export default function MatchModal({
   const [awayTeamId, setAwayTeamId] = useState('');
   const [matchDate, setMatchDate] = useState('');
   const [venue, setVenue] = useState('');
+  const [streamUrl, setStreamUrl] = useState('');
 
   // حالات التحكم في القوائم المنسدلة المخصصة
   const [tournamentDropdownOpen, setTournamentDropdownOpen] = useState(false);
@@ -90,6 +91,7 @@ export default function MatchModal({
         setHomeTeamId(match.homeTeamId);
         setAwayTeamId(match.awayTeamId);
         setVenue(match.venue || '');
+        setStreamUrl(match.streamUrl || '');
 
         // تنسيق التاريخ ليتناسب مع input datetime-local
         if (match.matchDate) {
@@ -109,6 +111,7 @@ export default function MatchModal({
         setAwayTeamId('');
         setMatchDate('');
         setVenue('');
+        setStreamUrl('');
       }
     }
   }, [isOpen, match, tournaments]);
@@ -179,6 +182,7 @@ export default function MatchModal({
       }
 
       formData.append('venue', venue.trim());
+      formData.append('streamUrl', streamUrl.trim());
       formData.append('stage', stage);
       if (stage === 'group' && groupName !== 'none') {
         formData.append('groupName', groupName);
@@ -482,6 +486,22 @@ export default function MatchModal({
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
               className="w-full px-4 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 transition-all"
+            />
+          </div>
+
+          {/* رابط البث المباشر */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-white/50 flex items-center gap-1.5">
+              <Tv className="w-3.5 h-3.5 text-[#F0C040]" />
+              <span>رابط البث المباشر (يوتيوب)</span>
+            </label>
+            <input
+              type="url"
+              placeholder="مثال: https://www.youtube.com/watch?v=xxxxxx"
+              value={streamUrl}
+              onChange={(e) => setStreamUrl(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 transition-all text-left"
+              dir="ltr"
             />
           </div>
 

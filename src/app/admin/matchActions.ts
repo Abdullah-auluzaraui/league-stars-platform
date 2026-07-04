@@ -132,6 +132,7 @@ export async function updateMatchSettings(formData: FormData) {
     const venue = formData.get('venue') as string;
     const stage = formData.get('stage') as string;
     const groupName = formData.get('groupName') as string | null;
+    const streamUrl = formData.get('streamUrl') as string | null;
 
     if (!id || !matchDateStr) {
       return { success: false, error: 'بيانات ناقصة' };
@@ -160,6 +161,7 @@ export async function updateMatchSettings(formData: FormData) {
       data: {
         matchDate,
         venue: venue || null,
+        streamUrl: streamUrl || null,
         stage,
         groupName: groupName || null,
       },
@@ -441,5 +443,26 @@ export async function updatePenaltyScore(
   } catch (error) {
     console.error('Error updating penalty score:', error);
     return { success: false, error: 'فشل تحديث ركلات الترجيح' };
+  }
+}
+
+// ─── 12. تحديث رابط البث المباشر للمباراة (محمي) ──────────────────────────────────────────
+export async function updateMatchStreamUrl(matchId: string, streamUrl: string | null) {
+  try {
+    await verifyAdmin();
+
+    await prisma.match.update({
+      where: { id: matchId },
+      data: {
+        streamUrl: streamUrl || null,
+      },
+    });
+
+    revalidatePath('/admin');
+    revalidatePath('/matches');
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating match stream url:', error);
+    return { success: false, error: 'فشل تحديث رابط البث المباشر' };
   }
 }

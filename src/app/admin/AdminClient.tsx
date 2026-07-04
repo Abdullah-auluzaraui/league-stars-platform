@@ -10,6 +10,7 @@ import {
   Star,
   LogOut,
   ChevronLeft,
+  Eye,
   Menu,
   X,
   Plus,
@@ -1671,13 +1672,28 @@ export default function AdminClient({ username }: { username: string }) {
             <p className="text-[10px] text-white/50 font-semibold">لوحة تحكم المشرف</p>
           </div>
 
-          {/* زر الهامبرغر للجوال لفتح القائمة */}
-          <button
-            className="md:hidden p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* الإجراءات */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                sessionStorage.setItem('admin_preview', 'true');
+                window.location.href = '/?preview=true';
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#F0C040] bg-[#C9971A]/10 border border-[#C9971A]/20 hover:bg-[#C9971A]/25 hover:text-white transition-all duration-200 cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">معاينة الموقع</span>
+              <span className="sm:hidden">معاينة</span>
+            </button>
+
+            {/* زر الهامبرغر للجوال لفتح القائمة */}
+            <button
+              className="md:hidden p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* محتوى التبويب النشط */}
