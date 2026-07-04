@@ -219,7 +219,7 @@ export default async function StandingsPage() {
             المنافسات والأرقام
           </h1>
         </div>
-        <p className="text-white/40 text-sm font-medium pr-6">
+        <p className="text-white/60 text-sm font-medium pr-6">
           مسار البطولة · الفرق والتشكيلات · لائحة الهدافين
         </p>
       </div>

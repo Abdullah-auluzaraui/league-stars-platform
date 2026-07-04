@@ -98,7 +98,7 @@ function TabButton({ id, active, onClick, icon: Icon, label }: { id: string; act
       className={`flex-1 flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
         active
           ? "text-[#F0C040] bg-[#C9971A]/15 border border-[#C9971A]/35"
-          : "text-white/35 hover:text-white/60 border border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]"
+          : "text-white/55 hover:text-white/70 border border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -129,7 +129,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
       {/* ── Group Stage ── */}
       {groups.length > 0 && (
         <div>
-          <p className="text-[11px] font-bold text-white/30 mb-3 tracking-widest uppercase">دور المجموعات</p>
+          <p className="text-[11px] font-bold text-white/50 mb-3 tracking-widest uppercase">دور المجموعات</p>
           <div className="space-y-4">
             {groups.map((group) => (
               <div key={group} className="glass-card rounded-2xl overflow-hidden animate-fade-in-up">
@@ -232,7 +232,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
       {/* ── Knockout Bracket ── */}
       {hasKnockout && (
         <div>
-          <p className="text-[11px] font-bold text-white/30 mb-3 tracking-widest uppercase">الأدوار الإقصائية</p>
+          <p className="text-[11px] font-bold text-white/50 mb-3 tracking-widest uppercase">الأدوار الإقصائية</p>
           <div className="space-y-3">
             {orderedStages.map((stage) => (
               <div key={stage}>
@@ -287,7 +287,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
                                   >
                                     {m.homeScore ?? 0}
                                   </span>
-                                  <span className="text-white/20 font-light">–</span>
+                                  <span className="text-white/40 font-medium">–</span>
                                   <span
                                     className="text-lg font-black score-number"
                                     style={{ color: m.status === "live" ? "#fc8181" : "#F3EED9" }}
@@ -308,7 +308,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs font-black text-white/15">VS</span>
+                              <span className="text-xs font-black text-white/35">VS</span>
                             )}
                           </div>
 
@@ -337,7 +337,7 @@ function StandingsTab({ data }: { data: StandingsData }) {
       {groups.length === 0 && !hasKnockout && (
         <div className="glass-card rounded-2xl p-10 text-center">
           <div className="text-3xl mb-3">🏟️</div>
-          <p className="text-white/30 font-semibold text-sm">لا توجد بيانات ترتيب بعد</p>
+          <p className="text-white/50 font-semibold text-sm">لا توجد بيانات ترتيب بعد</p>
         </div>
       )}
     </div>
@@ -400,7 +400,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] focus:border-[#C9971A]/50 focus:bg-white/[0.06] text-xs font-semibold text-[#F3EED9] placeholder-white/20 outline-none transition-all duration-300"
           />
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
         </div>
 
         {/* Group Filter Pills */}
@@ -437,7 +437,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
       {filteredTeams.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center animate-fade-in-up">
           <div className="text-3xl mb-3">🔍</div>
-          <p className="text-white/30 font-semibold text-xs">لم نجد أي فريق يطابق بحثك</p>
+          <p className="text-white/50 font-semibold text-xs">لم نجد أي فريق يطابق بحثك</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 animate-fade-in-up">
@@ -470,7 +470,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                   </span>
                 )}
                 
-                <span className="text-[9px] text-white/30 font-bold mt-2">
+                <span className="text-[10px] text-white/50 font-bold mt-2">
                   {team.players.length} لاعب مسجل
                 </span>
 
@@ -532,7 +532,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
             <div className="overflow-y-auto p-4 space-y-1 flex-1 max-h-[55vh] custom-scrollbar">
               {activeTeam.players.length === 0 ? (
                 <div className="py-12 text-center">
-                  <p className="text-white/25 text-xs font-bold">لا يوجد لاعبون مسجلون في هذا الفريق بعد</p>
+                  <p className="text-white/50 text-xs font-bold">لا يوجد لاعبون مسجلون في هذا الفريق بعد</p>
                 </div>
               ) : (
                 <>
@@ -624,7 +624,7 @@ function TopScorersTab({ data }: { data: StandingsData }) {
     return (
       <div className="glass-card rounded-2xl p-10 text-center">
         <div className="text-3xl mb-3">⚽</div>
-        <p className="text-white/30 font-semibold text-sm">لا توجد إحصائيات هدافين بعد</p>
+        <p className="text-white/50 font-semibold text-sm">لا توجد إحصائيات هدافين بعد</p>
       </div>
     );
   }
@@ -663,7 +663,7 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                   <p className="text-[11px] font-black text-white/90 truncate max-w-full leading-tight">
                     {cleanPlayerName(scorer.playerName)}
                   </p>
-                  <p className="text-[9px] text-white/35 font-bold truncate max-w-full mt-0.5">
+                  <p className="text-[10px] text-white/55 font-bold truncate max-w-full mt-0.5">
                     {scorer.teamName}
                   </p>
                 </div>
@@ -673,7 +673,7 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                   style={{ color: config.text }}
                 >
                   <span className="text-xl sm:text-2xl">{scorer.goals}</span>
-                  <span className="text-[9px] font-bold text-white/30">أهداف</span>
+                  <span className="text-[10px] font-bold text-white/50">أهداف</span>
                 </div>
               </div>
             );
@@ -712,7 +712,7 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                 {isTop3 ? (
                   <span className="text-lg leading-none">{config.label}</span>
                 ) : (
-                  <span className="text-xs font-black text-white/20 score-number">
+                  <span className="text-xs font-black text-white/45 score-number">
                     {idx + 1}
                   </span>
                 )}
@@ -721,13 +721,13 @@ function TopScorersTab({ data }: { data: StandingsData }) {
               {/* Player Name */}
               <div className="min-w-0 pr-2">
                 <p className="text-xs font-bold text-white/90 truncate">{cleanPlayerName(scorer.playerName)}</p>
-                <p className="text-[9px] text-white/30 font-semibold mt-0.5">لاعب مسجل</p>
+                <p className="text-[10px] text-white/50 font-semibold mt-0.5">لاعب مسجل</p>
               </div>
 
               {/* Team Info */}
               <div className="flex items-center gap-2 min-w-0">
                 <TeamAvatar name={scorer.teamName} logoUrl={scorer.logoUrl} size="sm" />
-                <span className="text-xs font-bold text-white/70 truncate">{scorer.teamName}</span>
+                <span className="text-xs font-bold text-white/80 truncate">{scorer.teamName}</span>
               </div>
 
               {/* Goals count */}

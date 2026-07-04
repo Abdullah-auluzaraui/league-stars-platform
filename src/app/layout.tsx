@@ -2,6 +2,34 @@ import { El_Messiri, Outfit } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
+import { prisma } from '@/core/lib/prisma';
+
+const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+  </svg>
+);
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
+const YoutubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.54a29 29 0 0 0 .46 5.12 2.78 2.78 0 0 0 1.95 1.96C5.12 19 12 19 12 19s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 11.54a29 29 0 0 0-.46-5.12z" />
+    <polygon points="9.75 15.02 15.5 11.54 9.75 8.05 9.75 15.02" />
+  </svg>
+);
+
+const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+);
 import './globals.css';
 import { DesktopNav, MobileNav } from './components/Navigation';
 import NavVisibilityWrapper from './components/NavVisibilityWrapper';
@@ -25,11 +53,35 @@ export const metadata = {
   description: 'تابع مباريات، ترتيب، وإحصائيات بطولة نجوم الدوري لكرة القدم بالوقت الفعلي.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let twitterUrl = '';
+  let instagramUrl = '';
+  let youtubeUrl = '';
+  let tiktokUrl = '';
+
+  try {
+    const settings = await prisma.setting.findMany({
+      where: {
+        key: {
+          in: ['social_twitter', 'social_instagram', 'social_youtube', 'social_tiktok'],
+        },
+      },
+    });
+
+    settings.forEach((s) => {
+      if (s.key === 'social_twitter') twitterUrl = s.value;
+      if (s.key === 'social_instagram') instagramUrl = s.value;
+      if (s.key === 'social_youtube') youtubeUrl = s.value;
+      if (s.key === 'social_tiktok') tiktokUrl = s.value;
+    });
+  } catch (err) {
+    console.error('Error fetching social links in layout:', err);
+  }
+
   return (
     <html
       lang="ar"
@@ -120,16 +172,64 @@ export default function RootLayout({
                   </div>
                   <span className="text-sm font-black text-white">League Stars</span>
                 </div>
-                <div className="flex items-center justify-center gap-4 text-[11px] text-white/20 font-semibold mb-3">
-                  <Link href="/" className="hover:text-white/50 transition-colors">الرئيسية</Link>
-                  <span className="text-white/10">·</span>
-                  <Link href="/matches" className="hover:text-white/50 transition-colors">المباريات</Link>
-                  <span className="text-white/10">·</span>
-                  <Link href="/standings" className="hover:text-white/50 transition-colors">المنافسات</Link>
-                  <span className="text-white/10">·</span>
-                  <Link href="/votes" className="hover:text-white/50 transition-colors">هدف الجولة</Link>
+                <div className="flex items-center justify-center gap-4 text-[11px] text-white/40 font-semibold mb-3">
+                  <Link href="/" className="hover:text-white/70 transition-colors">الرئيسية</Link>
+                  <span className="text-white/25">·</span>
+                  <Link href="/matches" className="hover:text-white/70 transition-colors">المباريات</Link>
+                  <span className="text-white/25">·</span>
+                  <Link href="/standings" className="hover:text-white/70 transition-colors">المنافسات</Link>
+                  <span className="text-white/25">·</span>
+                  <Link href="/votes" className="hover:text-white/70 transition-colors">هدف الجولة</Link>
                 </div>
-                <p className="text-[10px] text-white/12 font-semibold">
+                {(twitterUrl || instagramUrl || youtubeUrl || tiktokUrl) && (
+                  <div className="flex items-center justify-center gap-4 mb-4 mt-1">
+                    {twitterUrl && (
+                      <a
+                        href={twitterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/40 hover:text-white transition-colors"
+                        title="تويتر / X"
+                      >
+                        <TwitterIcon className="w-4.5 h-4.5" />
+                      </a>
+                    )}
+                    {instagramUrl && (
+                      <a
+                        href={instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/40 hover:text-pink-400 transition-colors"
+                        title="انستقرام"
+                      >
+                        <InstagramIcon className="w-4.5 h-4.5" />
+                      </a>
+                    )}
+                    {youtubeUrl && (
+                      <a
+                        href={youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/40 hover:text-red-500 transition-colors"
+                        title="يوتيوب"
+                      >
+                        <YoutubeIcon className="w-4.5 h-4.5" />
+                      </a>
+                    )}
+                    {tiktokUrl && (
+                      <a
+                        href={tiktokUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/40 hover:text-cyan-400 transition-colors"
+                        title="تيك توك"
+                      >
+                        <TiktokIcon className="w-4.5 h-4.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
+                <p className="text-[10px] text-white/25 font-semibold">
                   © {new Date().getFullYear()} League Stars — المملكة العربية السعودية
                 </p>
               </div>

@@ -27,6 +27,7 @@ import {
   Archive,
   ArchiveRestore,
   Search,
+  Settings,
 } from 'lucide-react';
 import TournamentModal from './TournamentModal';
 import TeamModal from './TeamModal';
@@ -34,6 +35,12 @@ import PlayerModal from './PlayerModal';
 import MatchModal from './MatchModal';
 import VotingTab from './VotingTab';
 import ConfirmModal from './ConfirmModal';
+import SettingsTab from './SettingsTab';
+import {
+  getSponsors,
+  getSettings,
+  getHeroContent,
+} from './settingsActions';
 import {
   getTournaments,
   startTournament,
@@ -61,7 +68,7 @@ import { logout } from '../admin-login/actions';
 
 // ─── Types ─────────────────────────────────────────
 
-type TabId = 'overview' | 'tournaments' | 'teams' | 'players' | 'matches' | 'voting';
+type TabId = 'overview' | 'tournaments' | 'teams' | 'players' | 'matches' | 'voting' | 'settings';
 
 interface NavItem {
   id: TabId;
@@ -78,6 +85,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'players',      label: 'اللاعبون',         icon: UserCircle      },
   { id: 'matches',      label: 'المباريات',         icon: Swords          },
   { id: 'voting',       label: 'التصويت',           icon: Star            },
+  { id: 'settings',     label: 'الإعدادات',        icon: Settings        },
 ];
 
 
@@ -87,12 +95,12 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     active:    { label: 'نشطة',    cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
     upcoming:  { label: 'قادمة',   cls: 'bg-[#C9971A]/15 text-[#F0C040] border-[#C9971A]/25'     },
-    completed: { label: 'منتهية',  cls: 'bg-white/8 text-white/40 border-white/10'                },
+    completed: { label: 'منتهية',  cls: 'bg-white/8 text-white/60 border-white/10'                },
     live:      { label: 'مباشر',   cls: 'bg-red-500/15 text-red-400 border-red-500/25 animate-pulse' },
-    finished:  { label: 'انتهت',   cls: 'bg-white/8 text-white/40 border-white/10'                },
+    finished:  { label: 'انتهت',   cls: 'bg-white/8 text-white/60 border-white/10'                },
     scheduled: { label: 'مجدولة',  cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25'         },
   };
-  const s = map[status] ?? { label: status, cls: 'bg-white/8 text-white/40 border-white/10' };
+  const s = map[status] ?? { label: status, cls: 'bg-white/8 text-white/60 border-white/10' };
   return (
     <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${s.cls}`}>
       {s.label}
@@ -107,7 +115,7 @@ function SectionHeader({ title, subtitle, onAdd }: { title: string; subtitle: st
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
         <h2 className="text-lg font-black text-white">{title}</h2>
-        <p className="text-xs text-white/35 font-semibold mt-0.5">{subtitle}</p>
+        <p className="text-xs text-white/55 font-semibold mt-0.5">{subtitle}</p>
       </div>
       {onAdd && (
         <button
@@ -128,9 +136,21 @@ interface OverviewTabProps {
   tournamentsCount: number;
   teamsCount: number;
   playersCount: number;
+  onAddTournament: () => void;
+  onScheduleMatch: () => void;
+  onAddPlayer: () => void;
+  onStartVoting: () => void;
 }
 
-function OverviewTab({ tournamentsCount, teamsCount, playersCount }: OverviewTabProps) {
+function OverviewTab({
+  tournamentsCount,
+  teamsCount,
+  playersCount,
+  onAddTournament,
+  onScheduleMatch,
+  onAddPlayer,
+  onStartVoting,
+}: OverviewTabProps) {
   const stats = [
     { label: 'البطولات', value: String(tournamentsCount), icon: Trophy, color: 'from-[#C9971A]/20 to-[#C9971A]/5', border: 'border-[#C9971A]/20', text: 'text-[#F0C040]' },
     { label: 'الفرق', value: String(teamsCount), icon: Shield, color: 'from-[#5C131F]/20 to-[#5C131F]/5', border: 'border-[#5C131F]/30', text: 'text-red-300' },
@@ -148,7 +168,7 @@ function OverviewTab({ tournamentsCount, teamsCount, playersCount }: OverviewTab
               className={`relative overflow-hidden rounded-2xl border ${s.border} bg-gradient-to-br ${s.color} p-3 sm:p-4 flex flex-col justify-between min-h-[90px] sm:min-h-[110px]`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-white/40 font-bold">{s.label}</span>
+                <span className="text-[10px] sm:text-xs text-white/60 font-bold">{s.label}</span>
                 <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${s.text} opacity-80`} />
               </div>
               <span className="text-xl sm:text-2xl font-black text-white tracking-tight mt-2">{s.value}</span>
@@ -156,39 +176,40 @@ function OverviewTab({ tournamentsCount, teamsCount, playersCount }: OverviewTab
           );
         })}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-white mb-1">إجراءات سريعة</h3>
-            <p className="text-[10px] sm:text-xs text-white/35 mb-4">الوصول السريع للعمليات الأساسية</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center">
-              <Trophy className="w-4 h-4 text-[#F0C040] mb-1.5" />
-              <span className="text-[10px] font-bold text-white">بطولة جديدة</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center">
-              <Swords className="w-4 h-4 text-blue-400 mb-1.5" />
-              <span className="text-[10px] font-bold text-white">جدولة مباراة</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center">
-              <Users className="w-4 h-4 text-emerald-400 mb-1.5" />
-              <span className="text-[10px] font-bold text-white">إضافة لاعب</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center">
-              <Star className="w-4 h-4 text-purple-400 mb-1.5" />
-              <span className="text-[10px] font-bold text-white">جلسة تصويت</span>
-            </button>
-          </div>
+      <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+        <div>
+          <h3 className="text-xs sm:text-sm font-bold text-white mb-1">إجراءات سريعة</h3>
+          <p className="text-[10px] sm:text-xs text-white/55 mb-4">الوصول السريع للعمليات الأساسية</p>
         </div>
-
-        <div className="glass-card rounded-2xl p-4 sm:p-5">
-          <h3 className="text-xs sm:text-sm font-bold text-white mb-1">النشاط الأخير</h3>
-          <p className="text-[10px] sm:text-xs text-white/35 mb-4">آخر العمليات والمجريات في النظام</p>
-          <div className="flex items-center justify-center min-h-[112px] rounded-xl border border-dashed border-white/8 bg-white/2 text-xs font-semibold text-white/25">
-            لا توجد عمليات حديثة مسجلة.
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <button
+            onClick={onAddTournament}
+            className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center"
+          >
+            <Trophy className="w-4.5 h-4.5 text-[#F0C040] mb-1.5" />
+            <span className="text-[11px] font-bold text-white">بطولة جديدة</span>
+          </button>
+          <button
+            onClick={onScheduleMatch}
+            className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center"
+          >
+            <Swords className="w-4.5 h-4.5 text-blue-400 mb-1.5" />
+            <span className="text-[11px] font-bold text-white">جدولة مباراة</span>
+          </button>
+          <button
+            onClick={onAddPlayer}
+            className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center"
+          >
+            <Users className="w-4.5 h-4.5 text-emerald-400 mb-1.5" />
+            <span className="text-[11px] font-bold text-white">إضافة لاعب</span>
+          </button>
+          <button
+            onClick={onStartVoting}
+            className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-white/10 active:scale-95 transition-all cursor-pointer text-center"
+          >
+            <Star className="w-4.5 h-4.5 text-purple-400 mb-1.5" />
+            <span className="text-[11px] font-bold text-white">جلسة تصويت</span>
+          </button>
         </div>
       </div>
     </div>
@@ -230,8 +251,8 @@ function TournamentsTab({
       />
       {tournaments.length === 0 ? (
         <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
-          <Trophy className="w-10 h-10 text-white/15 mx-auto mb-2" />
-          <p className="text-xs text-white/30 font-semibold">لا توجد بطولات مسجلة حالياً، اضغط على إضافة جديد لإنشاء بطولة</p>
+          <Trophy className="w-10 h-10 text-white/55 mx-auto mb-2" />
+          <p className="text-xs text-white/50 font-semibold">لا توجد بطولات مسجلة حالياً، اضغط على إضافة جديد لإنشاء بطولة</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -253,11 +274,11 @@ function TournamentsTab({
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <h3 className="text-sm font-bold text-white leading-tight">{t.name}</h3>
                       <StatusBadge status={t.status} />
-                      <span className="text-[10px] text-white/35 bg-white/5 px-2 py-0.5 rounded-md whitespace-nowrap">
+                      <span className="text-[10px] text-white/55 bg-white/5 px-2 py-0.5 rounded-md whitespace-nowrap">
                         {t.type === 'group_stage' ? `${t.groupCount} مجموعات` : 'إقصائي'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-white/35">
+                    <p className="text-[11px] text-white/55">
                       {t.type === 'group_stage'
                         ? `${t.qualifyingTeams} فرق متأهلة من كل مجموعة · ${t.groupCount} مجموعة`
                         : `بطولة خروج المغلوب (إقصائية)`
@@ -290,14 +311,14 @@ function TournamentsTab({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onEdit(t)}
-                      className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-white/50 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     {t.status !== 'active' && (
                       <button
                         onClick={() => onDelete(t.id)}
-                        className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -346,13 +367,13 @@ function TeamsTab({
 
       {/* شريط الفلترة والأرشفة */}
       <div className="flex items-center justify-between mb-4 bg-white/3 border border-white/5 p-3 rounded-2xl">
-        <div className="text-xs text-white/40 font-semibold">إجمالي الفرق: {teams.length}</div>
+        <div className="text-xs text-white/60 font-semibold">إجمالي الفرق: {teams.length}</div>
         <button
           onClick={() => setShowArchived(!showArchived)}
           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
             showArchived
               ? 'bg-[#C9971A]/10 border-[#C9971A]/20 text-[#F0C040]'
-              : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/6 hover:text-white'
+              : 'bg-white/4 border-white/8 text-white/60 hover:bg-white/6 hover:text-white'
           }`}
           type="button"
         >
@@ -363,12 +384,12 @@ function TeamsTab({
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <Loader2 className="w-8 h-8 text-[#F0C040] animate-spin" />
-          <span className="text-xs text-white/30 font-semibold">جاري تحميل قائمة الفرق...</span>
+          <span className="text-xs text-white/50 font-semibold">جاري تحميل قائمة الفرق...</span>
         </div>
       ) : teams.length === 0 ? (
         <div className="text-center py-16 bg-[#121018]/40 border border-white/5 rounded-2xl">
-          <Shield className="w-10 h-10 text-white/10 mx-auto mb-2.5" />
-          <p className="text-xs text-white/30 font-semibold">
+          <Shield className="w-10 h-10 text-white/45 mx-auto mb-2.5" />
+          <p className="text-xs text-white/50 font-semibold">
             {showArchived ? 'لا توجد فرق مؤرشفة حالياً' : 'لا توجد فرق مسجلة. أضف فريقاً جديداً للبدء!'}
           </p>
         </div>
@@ -394,7 +415,7 @@ function TeamsTab({
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center flex-shrink-0">
-                        <Shield className="w-4 h-4 text-white/30" />
+                        <Shield className="w-4 h-4 text-white/50" />
                       </div>
                     )}
                     <div className="min-w-0">
@@ -407,7 +428,7 @@ function TeamsTab({
                           <span className="text-[8px] font-black text-red-400 bg-red-500/10 border border-red-500/20 px-1 py-0.5 rounded">مستبعد</span>
                         )}
                       </div>
-                      <span className="text-[10px] text-white/40 block truncate">
+                      <span className="text-[10px] text-white/60 block truncate">
                         {assoc ? assoc.tournament.name : 'فريق عام (غير مرتبط)'}
                       </span>
                     </div>
@@ -421,14 +442,14 @@ function TeamsTab({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onEdit(team)}
-                        className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-white/50 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                         type="button"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => onArchiveToggle(team.id, isArchived)}
-                        className="p-1.5 text-white/30 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-white/50 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                         title={isArchived ? 'إلغاء الأرشفة' : 'أرشفة الفريق'}
                         type="button"
                       >
@@ -440,7 +461,7 @@ function TeamsTab({
                       </button>
                       <button
                         onClick={() => onDelete(team.id)}
-                        className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
                         type="button"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -458,10 +479,10 @@ function TeamsTab({
               <table className="w-full text-right">
                 <thead>
                   <tr className="border-b border-white/6">
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">البطولة</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">المجموعة</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-right whitespace-nowrap">الفريق</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-right whitespace-nowrap">البطولة</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-center whitespace-nowrap">المجموعة</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-center whitespace-nowrap">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/4">
@@ -483,7 +504,7 @@ function TeamsTab({
                               />
                             ) : (
                               <div className="w-8 h-8 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center flex-shrink-0">
-                                <Shield className="w-4 h-4 text-white/30" />
+                                <Shield className="w-4 h-4 text-white/50" />
                               </div>
                             )}
                             <div className="flex items-center gap-2">
@@ -508,21 +529,21 @@ function TeamsTab({
                               المجموعة {assoc.groupName}
                             </span>
                           ) : (
-                            <span className="text-xs text-white/20">-</span>
+                            <span className="text-xs text-white/60">-</span>
                           )}
                         </td>
                         <td className="px-3 py-3 sm:px-5 sm:py-3.5">
                           <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                             <button
                               onClick={() => onEdit(team)}
-                              className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-white/50 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                               type="button"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => onArchiveToggle(team.id, isArchived)}
-                              className="p-1.5 text-white/30 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-white/50 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                               title={isArchived ? 'إلغاء الأرشفة' : 'أرشفة الفريق'}
                               type="button"
                             >
@@ -534,7 +555,7 @@ function TeamsTab({
                             </button>
                             <button
                               onClick={() => onDelete(team.id)}
-                              className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
                               type="button"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -615,7 +636,7 @@ function PlayerAvatar({ player }: { player: AdminPlayer }) {
 
   return (
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/10 to-white/3 flex items-center justify-center flex-shrink-0">
-      <UserCircle className="w-4 h-4 text-white/35" />
+      <UserCircle className="w-4 h-4 text-white/55" />
     </div>
   );
 }
@@ -623,14 +644,14 @@ function PlayerAvatar({ player }: { player: AdminPlayer }) {
 function PositionBadge({ position }: { position?: string | null }) {
   if (!position) {
     return (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border text-white/35 bg-white/5 border-white/10 whitespace-nowrap">
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border text-white/55 bg-white/5 border-white/10 whitespace-nowrap">
         غير محدد
       </span>
     );
   }
 
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${POSITION_COLORS[position] ?? 'text-white/40 bg-white/5 border-white/10'}`}>
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${POSITION_COLORS[position] ?? 'text-white/60 bg-white/5 border-white/10'}`}>
       {POSITION_LABELS[position] ?? position}
     </span>
   );
@@ -677,7 +698,7 @@ function PlayersTab({
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mb-4 bg-white/3 border border-white/5 p-3 rounded-2xl">
         <div className="relative">
-          <Search className="w-4 h-4 text-white/25 absolute right-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-white/45 absolute right-3 top-1/2 -translate-y-1/2" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -715,7 +736,7 @@ function PlayersTab({
             className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border whitespace-nowrap ${
               includeArchivedTeams
                 ? 'bg-[#C9971A]/10 border-[#C9971A]/20 text-[#F0C040]'
-                : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/6 hover:text-white'
+                : 'bg-white/4 border-white/8 text-white/60 hover:bg-white/6 hover:text-white'
             }`}
           >
             {includeArchivedTeams ? 'إخفاء لاعبي الفرق المؤرشفة' : 'عرض لاعبي الفرق المؤرشفة'}
@@ -726,17 +747,17 @@ function PlayersTab({
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <Loader2 className="w-8 h-8 text-[#F0C040] animate-spin" />
-          <span className="text-xs text-white/30 font-semibold">جاري تحميل قائمة اللاعبين...</span>
+          <span className="text-xs text-white/50 font-semibold">جاري تحميل قائمة اللاعبين...</span>
         </div>
       ) : players.length === 0 ? (
         <div className="text-center py-16 bg-[#121018]/40 border border-white/5 rounded-2xl">
-          <UserCircle className="w-10 h-10 text-white/10 mx-auto mb-2.5" />
-          <p className="text-xs text-white/30 font-semibold">لا يوجد لاعبون مسجلون حالياً. أضف لاعباً جديداً للبدء!</p>
+          <UserCircle className="w-10 h-10 text-white/45 mx-auto mb-2.5" />
+          <p className="text-xs text-white/50 font-semibold">لا يوجد لاعبون مسجلون حالياً. أضف لاعباً جديداً للبدء!</p>
         </div>
       ) : filteredPlayers.length === 0 ? (
         <div className="text-center py-12 bg-[#121018]/40 border border-white/5 rounded-2xl">
-          <Search className="w-9 h-9 text-white/10 mx-auto mb-2.5" />
-          <p className="text-xs text-white/30 font-semibold">لا توجد نتائج مطابقة للفلاتر الحالية</p>
+          <Search className="w-9 h-9 text-white/45 mx-auto mb-2.5" />
+          <p className="text-xs text-white/50 font-semibold">لا توجد نتائج مطابقة للفلاتر الحالية</p>
         </div>
       ) : (
         <>
@@ -752,7 +773,7 @@ function PlayersTab({
                     <PlayerAvatar player={player} />
                     <div className="min-w-0">
                       <span className="text-sm font-bold text-white block truncate">{player.name}</span>
-                      <span className="text-[10px] text-white/40 block truncate">{player.team?.name}</span>
+                      <span className="text-[10px] text-white/60 block truncate">{player.team?.name}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -763,20 +784,20 @@ function PlayersTab({
                   </div>
                 </div>
                 <div className="border-t border-white/5 pt-2 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-white/30 font-semibold">
+                  <span className="text-[10px] text-white/50 font-semibold">
                     {player._count?.goals ?? 0} هدف · {player._count?.cards ?? 0} بطاقة
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => onEdit(player)}
-                      className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-white/50 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                       type="button"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDelete(player.id)}
-                      className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
                       type="button"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -792,12 +813,12 @@ function PlayersTab({
               <table className="w-full text-right">
                 <thead>
                   <tr className="border-b border-white/6">
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">اللاعب</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">الفريق</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">الرقم</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-right whitespace-nowrap">المركز</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">السجل</th>
-                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/35 text-center whitespace-nowrap">إجراءات</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-right whitespace-nowrap">اللاعب</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-right whitespace-nowrap">الفريق</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-center whitespace-nowrap">الرقم</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-right whitespace-nowrap">المركز</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-center whitespace-nowrap">السجل</th>
+                    <th className="px-3 py-3 sm:px-5 sm:py-3.5 text-[11px] font-bold text-white/55 text-center whitespace-nowrap">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/4">
@@ -824,7 +845,7 @@ function PlayersTab({
                           <PositionBadge position={player.position} />
                         </td>
                         <td className="px-3 py-3 sm:px-5 sm:py-3.5 text-center">
-                          <span className="text-[10px] text-white/35 font-bold whitespace-nowrap">
+                          <span className="text-[10px] text-white/55 font-bold whitespace-nowrap">
                             {player._count?.goals ?? 0} هدف · {player._count?.cards ?? 0} بطاقة
                           </span>
                         </td>
@@ -832,14 +853,14 @@ function PlayersTab({
                           <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                             <button
                               onClick={() => onEdit(player)}
-                              className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-white/50 hover:text-white/60 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                               type="button"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => onDelete(player.id)}
-                              className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors cursor-pointer"
                               type="button"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -927,15 +948,15 @@ function MatchesTab({
             </div>
           ) : matches.length === 0 ? (
             <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center">
-              <Swords className="w-10 h-10 text-white/15 mx-auto mb-2" />
-              <p className="text-xs font-semibold text-white/30">لا توجد مباريات مجدولة حالياً.</p>
+              <Swords className="w-10 h-10 text-white/55 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-white/50">لا توجد مباريات مجدولة حالياً.</p>
             </div>
           ) : (
             <div className="glass-card rounded-2xl border border-white/5 overflow-hidden text-right" dir="rtl">
               <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                 <table className="w-full border-collapse text-right">
                   <thead>
-                    <tr className="border-b border-white/5 bg-white/2 text-[10px] sm:text-xs font-black text-white/40">
+                    <tr className="border-b border-white/5 bg-white/2 text-[10px] sm:text-xs font-black text-white/60">
                       <th className="px-6 py-4">البطولة</th>
                       <th className="px-6 py-4">المرحلة / المجموعة</th>
                       <th className="px-6 py-4 text-center">المباراة</th>
@@ -984,14 +1005,14 @@ function MatchesTab({
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => onEdit(m)}
-                                className="p-1.5 text-white/30 hover:text-[#F0C040] hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-white/50 hover:text-[#F0C040] hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                                 title="تعديل الإعدادات"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => onDelete(m.id)}
-                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-white/50 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                                 title="حذف المباراة"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1066,6 +1087,31 @@ export default function AdminClient({ username }: { username: string }) {
   const [votingRounds, setVotingRounds] = useState<any[]>([]);
   const [votingRoundsLoading, setVotingRoundsLoading] = useState(true);
   const [activeVotingSubTab, setActiveVotingSubTab] = useState<'current' | 'nominate' | 'results' | 'archive'>('current');
+
+  // --- إعدادات الرعاة والموقع ---
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [heroContent, setHeroContent] = useState<any>(null);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  const fetchSettingsAndSponsors = async () => {
+    try {
+      setSettingsLoading(true);
+      const [sponsorsData, settingsData, heroData] = await Promise.all([
+        getSponsors(),
+        getSettings(),
+        getHeroContent(),
+      ]);
+      setSponsors(sponsorsData);
+      setSettings(settingsData);
+      setHeroContent(heroData);
+    } catch (err) {
+      console.error(err);
+      showToast('فشل تحميل الإعدادات والرعاة', 'error');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   // إعدادات نافذة التأكيد المخصصة (Confirm Modal)
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -1169,6 +1215,7 @@ export default function AdminClient({ username }: { username: string }) {
     fetchTournaments();
     fetchMatches();
     fetchVotingRounds();
+    fetchSettingsAndSponsors();
   }, []);
 
   useEffect(() => {
@@ -1381,7 +1428,33 @@ export default function AdminClient({ username }: { username: string }) {
   };
 
   const TAB_CONTENT: Record<TabId, React.ReactNode> = {
-    overview:    <OverviewTab tournamentsCount={tournaments.length} teamsCount={teams.length} playersCount={players.length} />,
+    overview: (
+      <OverviewTab
+        tournamentsCount={tournaments.length}
+        teamsCount={teams.length}
+        playersCount={players.length}
+        onAddTournament={() => {
+          setActiveTab('tournaments');
+          setSelectedTournament(null);
+          setIsModalOpen(true);
+        }}
+        onScheduleMatch={() => {
+          setActiveTab('matches');
+          setActiveMatchTab('schedule');
+          setSelectedMatch(null);
+          setIsMatchModalOpen(true);
+        }}
+        onAddPlayer={() => {
+          setActiveTab('players');
+          setSelectedPlayer(null);
+          setIsPlayerModalOpen(true);
+        }}
+        onStartVoting={() => {
+          setActiveTab('voting');
+          setActiveVotingSubTab('current');
+        }}
+      />
+    ),
     tournaments: (
       <TournamentsTab
         tournaments={tournaments}
@@ -1469,6 +1542,16 @@ export default function AdminClient({ username }: { username: string }) {
         setActiveSubTab={setActiveVotingSubTab}
       />
     ),
+    settings: (
+      <SettingsTab
+        sponsors={sponsors}
+        settings={settings}
+        heroContent={heroContent}
+        fetchSettingsAndSponsors={fetchSettingsAndSponsors}
+        showToast={showToast}
+        triggerConfirm={triggerConfirm}
+      />
+    ),
   };
 
   // دالة مشتركة لعرض محتويات القائمة الجانبية لمنع تكرار الكود
@@ -1481,7 +1564,7 @@ export default function AdminClient({ username }: { username: string }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-white truncate">{username}</p>
-          <p className="text-[10px] text-white/35">مشرف النظام</p>
+          <p className="text-[10px] text-white/55">مشرف النظام</p>
         </div>
       </div>
 
@@ -1519,7 +1602,7 @@ export default function AdminClient({ username }: { username: string }) {
           onClick={async () => {
             await logout();
           }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white/35 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200 cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white/55 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200 cursor-pointer"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           تسجيل الخروج
@@ -1585,7 +1668,7 @@ export default function AdminClient({ username }: { username: string }) {
             <h1 className="text-base font-black text-white">
               {NAV_ITEMS.find(n => n.id === activeTab)?.label}
             </h1>
-            <p className="text-[10px] text-white/30 font-semibold">لوحة تحكم المشرف</p>
+            <p className="text-[10px] text-white/50 font-semibold">لوحة تحكم المشرف</p>
           </div>
 
           {/* زر الهامبرغر للجوال لفتح القائمة */}

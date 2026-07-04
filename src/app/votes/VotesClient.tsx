@@ -127,7 +127,7 @@ function VideoPlayer({ url, goalId }: { url: string | null; goalId: string }) {
           border: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div className="flex items-center gap-2 text-white/18">
+        <div className="flex items-center gap-2 text-white/45">
           <Play className="w-4 h-4" />
           <span className="text-xs font-medium">الفيديو غير متاح حالياً</span>
         </div>
@@ -250,7 +250,7 @@ function EmptyState() {
       <h2 className="text-xl font-black text-white/70 mb-3">
         لم تبدأ المنافسات بعد
       </h2>
-      <p className="text-white/30 text-sm max-w-xs leading-relaxed">
+      <p className="text-white/50 text-sm max-w-xs leading-relaxed">
         بمجرد انطلاق الجولة الأولى وترشيح أجمل الأهداف، ستتمكن من التصويت
         لأفضل هدف واختيار الفائز
       </p>
@@ -529,11 +529,11 @@ function ActiveVotingView({
           <div className="live-dot flex-shrink-0" style={{ background: "#C9971A", boxShadow: "0 0 6px rgba(201,151,26,0.8)" }} />
           <div>
             <p className="text-xs font-black text-[#F0C040]">التصويت مفتوح الآن</p>
-            <p className="text-[11px] text-white/35 font-medium">
+            <p className="text-[11px] text-white/55 font-medium">
               صوت واحد فقط — النتائج تظهر بعد تسجيل صوتك
             </p>
           </div>
-          <Lock className="w-4 h-4 text-white/20 mr-auto flex-shrink-0" />
+          <Lock className="w-4 h-4 text-white/40 mr-auto flex-shrink-0" />
         </div>
       ) : (
         <div
@@ -546,7 +546,7 @@ function ActiveVotingView({
           <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <div>
             <p className="text-xs font-black text-emerald-400">تم تسجيل صوتك!</p>
-            <p className="text-[11px] text-white/35 font-medium">
+            <p className="text-[11px] text-white/55 font-medium">
               شكراً لمشاركتك — إجمالي الأصوات: {totalVotes}
             </p>
           </div>
@@ -642,7 +642,7 @@ function WinnerCard({ winner, index }: { winner: ArchivedWinner; index: number }
 
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <span className="text-[11px] font-black text-white/50">{winner.roundLabel}</span>
-          <div className="flex items-center gap-1 text-[10px] text-white/30 font-medium">
+          <div className="flex items-center gap-1 text-[11px] text-white/55 font-medium">
             <Eye className="w-3 h-3" />
             {winner.totalVotes} صوت
           </div>
@@ -701,11 +701,11 @@ function ArchiveView({ winners }: { winners: ArchivedWinner[] }) {
         <Flame className="w-4 h-4 text-[#C9971A] flex-shrink-0" />
         <div>
           <p className="text-xs font-black text-[#F0C040]">معرض أهداف البطولة</p>
-          <p className="text-[11px] text-white/35 font-medium">
+          <p className="text-[11px] text-white/55 font-medium">
             {winners.length} هدف فائز مسجّل في سجل المنافسة
           </p>
         </div>
-        <Zap className="w-4 h-4 text-white/15 mr-auto flex-shrink-0" />
+        <Zap className="w-4 h-4 text-white/40 mr-auto flex-shrink-0" />
       </div>
 
       {winners.map((winner, i) => (

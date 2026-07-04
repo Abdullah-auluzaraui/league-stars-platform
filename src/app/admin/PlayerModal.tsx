@@ -214,7 +214,7 @@ export default function PlayerModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             type="button"
           >
             <X className="w-4 h-4" />
@@ -256,13 +256,13 @@ export default function PlayerModal({
                   <span className="truncate">
                     {selectedTeam ? selectedTeam.name : 'اختر فريق اللاعب'}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${teamDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${teamDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {teamDropdownOpen && (
                   <div className="absolute z-50 top-full mt-2 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 max-h-56 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full">
                     {selectableTeams.length === 0 ? (
-                      <div className="px-4 py-3 text-xs text-white/35 font-semibold">
+                      <div className="px-4 py-3 text-xs text-white/55 font-semibold">
                         لا توجد فرق نشطة حالياً
                       </div>
                     ) : (
@@ -312,8 +312,8 @@ export default function PlayerModal({
                   <img src={filePreview} alt="معاينة صورة اللاعب" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <Upload className="w-5 h-5 text-white/35" />
-                    <span className="text-[10px] text-white/40 font-bold">رفع صورة</span>
+                    <Upload className="w-5 h-5 text-white/55" />
+                    <span className="text-[10px] text-white/60 font-bold">رفع صورة</span>
                   </div>
                 )}
               </button>

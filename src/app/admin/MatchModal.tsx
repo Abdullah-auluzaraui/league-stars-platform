@@ -236,7 +236,7 @@ export default function MatchModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             type="button"
           >
             <X className="w-4 h-4" />
@@ -268,7 +268,7 @@ export default function MatchModal({
               }`}
             >
               <span className="text-right flex-1">{selectedTournament?.name || 'اختر البطولة'}</span>
-              {!isEditMode && <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${tournamentDropdownOpen ? 'rotate-180' : ''}`} />}
+              {!isEditMode && <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${tournamentDropdownOpen ? 'rotate-180' : ''}`} />}
             </div>
             {tournamentDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 divide-y divide-white/4 max-h-40 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full">
@@ -301,7 +301,7 @@ export default function MatchModal({
                 className="w-full flex items-center justify-between px-4 py-2.5 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold hover:bg-white/6 hover:border-white/12 transition-all cursor-pointer select-none text-right"
               >
                 <span>{STAGES_AR[stage] || 'اختر المرحلة'}</span>
-                <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${stageDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${stageDropdownOpen ? 'rotate-180' : ''}`} />
               </div>
               {stageDropdownOpen && (
                 <div className="absolute z-50 mt-1 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 divide-y divide-white/4 max-h-40 overflow-y-auto [&::-webkit-scrollbar]:w-1">
@@ -344,7 +344,7 @@ export default function MatchModal({
               >
                 <span>{groupName === 'none' ? 'بدون مجموعة' : `المجموعة ${groupName}`}</span>
                 {stage === 'group' && isGroupStageTournament && (
-                  <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${groupDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${groupDropdownOpen ? 'rotate-180' : ''}`} />
                 )}
               </div>
               {groupDropdownOpen && stage === 'group' && isGroupStageTournament && (
@@ -385,13 +385,13 @@ export default function MatchModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white/3 border border-white/5 rounded-xl">
             {/* الفريق الأول (المستضيف) */}
             <div className="space-y-1.5 relative" ref={homeRef}>
-              <label className="block text-[11px] font-bold text-white/40 text-right">الفريق المستضيف *</label>
+              <label className="block text-[11px] font-bold text-white/60 text-right">الفريق المستضيف *</label>
               <div
                 onClick={() => setHomeTeamDropdownOpen(!homeTeamDropdownOpen)}
                 className="w-full flex items-center justify-between px-3 py-2 bg-[#0e0e12] border border-white/8 rounded-lg text-white text-xs font-semibold hover:border-white/12 cursor-pointer"
               >
                 <span className="truncate flex-1 text-right">{selectedHomeTeam?.name || 'اختر الفريق'}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-white/40 flex-shrink-0 mr-2 transition-transform ${homeTeamDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-white/60 flex-shrink-0 mr-2 transition-transform ${homeTeamDropdownOpen ? 'rotate-180' : ''}`} />
               </div>
               {homeTeamDropdownOpen && (
                 <div className="absolute z-50 mt-1 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 max-h-44 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full" dir="rtl">
@@ -411,7 +411,7 @@ export default function MatchModal({
                     </button>
                   ))}
                   {filteredTeams.length === 0 && (
-                    <p className="text-[10px] p-2 text-white/20 text-center">لا توجد فرق متاحة</p>
+                    <p className="text-[10px] p-2 text-white/60 text-center">لا توجد فرق متاحة</p>
                   )}
                 </div>
               )}
@@ -419,13 +419,13 @@ export default function MatchModal({
 
             {/* الفريق الثاني (الضيف) */}
             <div className="space-y-1.5 relative" ref={awayRef}>
-              <label className="block text-[11px] font-bold text-white/40 text-right">الفريق الضيف *</label>
+              <label className="block text-[11px] font-bold text-white/60 text-right">الفريق الضيف *</label>
               <div
                 onClick={() => setAwayTeamDropdownOpen(!awayTeamDropdownOpen)}
                 className="w-full flex items-center justify-between px-3 py-2 bg-[#0e0e12] border border-white/8 rounded-lg text-white text-xs font-semibold hover:border-white/12 cursor-pointer"
               >
                 <span className="truncate flex-1 text-right">{selectedAwayTeam?.name || 'اختر الفريق'}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-white/40 flex-shrink-0 mr-2 transition-transform ${awayTeamDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-white/60 flex-shrink-0 mr-2 transition-transform ${awayTeamDropdownOpen ? 'rotate-180' : ''}`} />
               </div>
               {awayTeamDropdownOpen && (
                 <div className="absolute z-50 mt-1 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 max-h-44 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full" dir="rtl">
@@ -448,7 +448,7 @@ export default function MatchModal({
                     );
                   })}
                   {filteredTeams.length === 0 && (
-                    <p className="text-[10px] p-2 text-white/20 text-center">لا توجد فرق متاحة</p>
+                    <p className="text-[10px] p-2 text-white/60 text-center">لا توجد فرق متاحة</p>
                   )}
                 </div>
               )}

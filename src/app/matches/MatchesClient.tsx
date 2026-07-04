@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -88,7 +88,7 @@ function MatchTimeline({ match }: { match: MatchWithEvents }) {
 
   return (
     <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[11px] font-bold text-white/30 mb-3 tracking-wider uppercase">أحداث المباراة</p>
+      <p className="text-[11px] font-bold text-white/55 mb-3 tracking-wider uppercase">أحداث المباراة</p>
       <div className="space-y-1.5">
         {events.map((ev) => {
           const isHome = isHomeEvent(ev.teamId);
@@ -128,7 +128,7 @@ function MatchTimeline({ match }: { match: MatchWithEvents }) {
               <div className={`flex flex-col ${isHome ? 'items-start' : 'items-end'} min-w-0`}>
                 <span className="text-xs font-bold text-white/85 truncate max-w-[120px]">{ev.player.name}</span>
                 {ev.eventType === 'goal' && getGoalTypeLabel(ev.type) && (
-                  <span className="text-[10px] text-white/35 font-medium">{getGoalTypeLabel(ev.type)}</span>
+                  <span className="text-[10px] text-white/55 font-medium">{getGoalTypeLabel(ev.type)}</span>
                 )}
               </div>
             </div>
@@ -171,7 +171,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
             ) : isFinished ? (
               <span
                 className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
               >
                 انتهت
               </span>
@@ -185,7 +185,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-white/25 font-semibold">
+          <div className="flex items-center gap-2 text-[11px] text-white/50 font-medium">
             {match.groupName && <span>المجموعة {match.groupName}</span>}
             {match.groupName && <span>·</span>}
             <span>{getStageName(match.stage)}</span>
@@ -211,7 +211,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
                   >
                     {match.homeScore ?? 0}
                   </span>
-                  <span className="text-xl font-light text-white/20">:</span>
+                  <span className="text-xl font-medium text-white/40">:</span>
                   <span
                     className="text-3xl sm:text-4xl font-black score-number"
                     style={{ color: isLive ? '#fc8181' : '#F3EED9', textShadow: isLive ? '0 0 20px rgba(239,68,68,0.4)' : 'none' }}
@@ -234,8 +234,8 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               </>
             ) : (
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-sm font-black text-white/20">VS</span>
-                <span className="text-[10px] text-white/30 font-semibold">{formatTime(match.matchDate)}</span>
+                <span className="text-sm font-black text-white/40">VS</span>
+                <span className="text-[11px] text-white/55 font-medium">{formatTime(match.matchDate)}</span>
               </div>
             )}
           </div>
@@ -249,10 +249,10 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
 
         {/* ── Venue + Date row ── */}
         {(match.venue || isFinished) && (
-          <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-white/25 font-semibold">
+          <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-white/50 font-medium">
             {match.venue && (
               <span className="flex items-center gap-1">
-                <MapPin className="w-2.5 h-2.5" />
+                <MapPin className="w-3 h-3" />
                 {match.venue}
               </span>
             )}
@@ -260,7 +260,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               <>
                 <span>·</span>
                 <span className="flex items-center gap-1">
-                  <Clock className="w-2.5 h-2.5" />
+                  <Clock className="w-3 h-3" />
                   {formatDate(match.matchDate)}
                 </span>
               </>

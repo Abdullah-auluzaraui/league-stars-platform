@@ -23,6 +23,7 @@ async function getHomeData() {
       goalsCount,
       teamsCount,
       matchesCount,
+      settingsList,
     ] =
       await Promise.all([
         prisma.content.findUnique({ where: { section: 'hero' } }).catch(() => null),
@@ -60,18 +61,24 @@ async function getHomeData() {
           orderBy: { goalsCount: 'desc' },
           take: 5,
         }).catch(() => []),
-        prisma.sponsor.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }).catch(() => []),
+        prisma.sponsor.findMany({ where: { isActive: true }, orderBy: { displayOrder: 'asc' } }).catch(() => []),
         prisma.goal.count().catch(() => 0),
         prisma.team.count({ where: { archivedAt: null } }).catch(() => 0),
         prisma.match.count().catch(() => 0),
+        prisma.setting.findMany().catch(() => []),
       ]);
 
-    return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors, goalsCount, teamsCount, matchesCount };
+    const settingsMap: Record<string, string> = {};
+    settingsList.forEach((s) => {
+      settingsMap[s.key] = s.value;
+    });
+
+    return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors, goalsCount, teamsCount, matchesCount, settingsMap };
   } catch {
     return {
       hero: null, tournament: null, liveMatches: [], nextMatch: null,
       lastFinishedMatch: null, activeVoteGoal: null, topScorers: [], sponsors: [],
-      goalsCount: 0, teamsCount: 0, matchesCount: 0,
+      goalsCount: 0, teamsCount: 0, matchesCount: 0, settingsMap: {},
     };
   }
 }
@@ -126,8 +133,8 @@ function MatchCard({ match, delay = 0 }: { match: MatchData; delay?: number }) {
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[11px] text-white/40 font-semibold font-outfit flex items-center gap-1.5">
-          <span className="w-1 h-1 rounded-full bg-white/25 inline-block" />
+        <span className="text-xs text-white/60 font-medium font-outfit flex items-center gap-1.5">
+          <span className="w-1 h-1 rounded-full bg-white/40 inline-block" />
           {match.venue}
         </span>
         {isLive && (
@@ -143,7 +150,7 @@ function MatchCard({ match, delay = 0 }: { match: MatchData; delay?: number }) {
           </span>
         )}
         {isFinished && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/35 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/55 bg-white/8 border border-white/15 px-2.5 py-1 rounded-full">
             منتهية
           </span>
         )}
@@ -166,16 +173,16 @@ function MatchCard({ match, delay = 0 }: { match: MatchData; delay?: number }) {
           {isLive || isFinished ? (
             <div className="flex items-center gap-2">
               <span className={`text-3xl font-black font-outfit score-number leading-none ${isLive ? 'text-white' : 'text-white/80'}`}>{match.homeScore}</span>
-              <span className="text-white/20 text-xl font-light">—</span>
+              <span className="text-white/40 text-xl font-medium">—</span>
               <span className={`text-3xl font-black font-outfit score-number leading-none ${isLive ? 'text-white' : 'text-white/80'}`}>{match.awayScore}</span>
             </div>
           ) : (
             <div className="text-center">
               <div className="text-lg font-black text-[#F0C040] font-outfit">{formatTime(match.matchDate)}</div>
-              <div className="text-[10px] text-white/35 font-semibold mt-0.5">{formatDate(match.matchDate)}</div>
+              <div className="text-[11px] text-white/55 font-semibold mt-0.5">{formatDate(match.matchDate)}</div>
             </div>
           )}
-          <span className="text-[9px] font-black tracking-widest text-white/18 mt-2 font-outfit">VS</span>
+          <span className="text-[10px] font-black tracking-widest text-white/35 mt-1.5 font-outfit">VS</span>
         </div>
 
         {/* Away */}
@@ -242,7 +249,7 @@ function ScorerRow({ player, rank, delay }: {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-bold text-white truncate">{player.name}</div>
-        <div className="text-[10px] text-white/35 font-semibold truncate mt-0.5">{player.team.name}</div>
+        <div className="text-[11px] text-white/55 font-semibold truncate mt-0.5">{player.team.name}</div>
         {/* Progress */}
         <div className="mt-1.5 h-[2px] w-full bg-white/[0.07] rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
@@ -252,7 +259,7 @@ function ScorerRow({ player, rank, delay }: {
       {/* Goals */}
       <div className="flex items-baseline gap-0.5 shrink-0">
         <span className={`text-xl font-black font-outfit score-number leading-none ${rankColor}`}>{player.goalsCount}</span>
-        <span className="text-[9px] text-white/25 font-bold">هدف</span>
+        <span className="text-[10px] text-white/45 font-bold">هدف</span>
       </div>
     </div>
   );
@@ -264,13 +271,15 @@ export default async function HomePage() {
   const data = await getHomeData();
 
   const tournamentName = data.tournament?.name ?? 'League Stars';
+  const heroTitle = data.hero?.title ?? 'League Stars';
   const heroBody = data.hero?.body ?? 'منصة إدارة ومتابعة البطولات.';
   const liveMatches = data.liveMatches as MatchData[];
   const nextMatch = data.nextMatch as MatchData | null;
   const lastFin = data.lastFinishedMatch as MatchData | null;
   const scorers = data.topScorers;
   const sponsors = data.sponsors;
-  const voteGoal = data.activeVoteGoal;
+  const votingEnabled = data.settingsMap['voting_enabled'] !== 'false';
+  const voteGoal = votingEnabled ? data.activeVoteGoal : null;
 
   const allMatches: MatchData[] = [
     ...liveMatches,
@@ -327,7 +336,7 @@ export default async function HomePage() {
           className="relative z-10 text-4xl sm:text-5xl font-black tracking-tight text-gold-gradient animate-fade-in-up mb-3"
           style={{ animationDelay: '100ms' }}
         >
-          League Stars
+          {heroTitle}
         </h1>
 
         {/* Subtitle */}
@@ -370,7 +379,7 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/35">
+          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/50">
             لا توجد مباريات مسجلة حالياً.
           </div>
         )}
@@ -389,7 +398,7 @@ export default async function HomePage() {
         </div>
 
         {scorers.length === 0 && (
-          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/35">
+          <div className="glass-card rounded-2xl p-5 text-center text-xs font-semibold text-white/50">
             لا توجد أهداف مسجلة بعد.
           </div>
         )}
@@ -455,61 +464,79 @@ export default async function HomePage() {
       </section>
 
       {/* ══ VOTE ══════════════════════════════════════════════ */}
-      {voteGoal ? (
-        <section>
-          <div className="flex items-center gap-2.5 mb-4 px-0.5">
-            <span className="section-accent-line-red" />
-            <h2 className="text-base sm:text-lg font-black text-white">تصويت هدف الجولة</h2>
-            <span className="w-2 h-2 rounded-full bg-[#C9971A] animate-glow-pulse" />
-          </div>
-          <div className="glass-card-gold rounded-2xl p-5 animate-fade-in-up">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(201,151,26,0.15)', border: '2px solid rgba(201,151,26,0.4)', boxShadow: '0 0 16px rgba(201,151,26,0.2)' }}>
-                <Star className="w-6 h-6 text-[#F0C040] fill-[#C9971A]/60" />
-              </div>
-              <div className="flex-1">
-                <div className="text-[11px] font-black text-[#F0C040] uppercase tracking-wider mb-1">تصويت مفتوح</div>
-                <div className="text-sm font-bold text-white">صوّت لأفضل هدف في الجولة</div>
-                <div className="text-[11px] text-white/45 mt-0.5">هدف {voteGoal.player.name} — {voteGoal.team.name}</div>
-              </div>
+      {votingEnabled && (
+        voteGoal ? (
+          <section>
+            <div className="flex items-center gap-2.5 mb-4 px-0.5">
+              <span className="section-accent-line-red" />
+              <h2 className="text-base sm:text-lg font-black text-white">تصويت هدف الجولة</h2>
+              <span className="w-2 h-2 rounded-full bg-[#C9971A] animate-glow-pulse" />
             </div>
-            <Link href="/votes" className="btn-trophy w-full flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl">
-              <Vote className="w-4 h-4" />
-              صوّت الآن
+            <div className="glass-card-gold rounded-2xl p-5 animate-fade-in-up">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(201,151,26,0.15)', border: '2px solid rgba(201,151,26,0.4)', boxShadow: '0 0 16px rgba(201,151,26,0.2)' }}>
+                  <Star className="w-6 h-6 text-[#F0C040] fill-[#C9971A]/60" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[11px] font-black text-[#F0C040] uppercase tracking-wider mb-1">تصويت مفتوح</div>
+                  <div className="text-sm font-bold text-white">صوّت لأفضل هدف في الجولة</div>
+                  <div className="text-[11px] text-white/45 mt-0.5">هدف {voteGoal.player.name} — {voteGoal.team.name}</div>
+                </div>
+              </div>
+              <Link href="/votes" className="btn-trophy w-full flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl">
+                <Vote className="w-4 h-4" />
+                صوّت الآن
+              </Link>
+            </div>
+          </section>
+        ) : (
+          <section>
+            <Link href="/matches" className="block">
+              <div className="glass-card-burgundy rounded-2xl p-4 flex items-center gap-4 hover-lift animate-fade-in-up">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(220,38,60,0.15)', border: '1px solid rgba(220,38,60,0.3)' }}>
+                  <Vote className="w-5 h-5 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-white">تصويت هدف الجولة</div>
+                  <div className="text-[11px] text-white/60 mt-0.5">سيُفتح التصويت بعد انتهاء الجولة القادمة</div>
+                </div>
+                <Eye className="w-4 h-4 text-white/40 shrink-0" />
+              </div>
             </Link>
-          </div>
-        </section>
-      ) : (
-        <section>
-          <Link href="/matches" className="block">
-            <div className="glass-card-burgundy rounded-2xl p-4 flex items-center gap-4 hover-lift animate-fade-in-up">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(220,38,60,0.15)', border: '1px solid rgba(220,38,60,0.3)' }}>
-                <Vote className="w-5 h-5 text-red-400" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-bold text-white">تصويت هدف الجولة</div>
-                <div className="text-[11px] text-white/40 mt-0.5">سيُفتح التصويت بعد انتهاء الجولة القادمة</div>
-              </div>
-              <Eye className="w-4 h-4 text-white/20 shrink-0" />
-            </div>
-          </Link>
-        </section>
+          </section>
+        )
       )}
 
       {/* ══ SPONSORS ══════════════════════════════════════════ */}
       {sponsors.length > 0 && (
         <section className="py-2">
           <div className="section-divider mb-4">
-            <span className="text-[10px] font-bold tracking-[0.18em] text-white/25 uppercase">شركاء النجاح</span>
+            <span className="text-[10px] font-bold tracking-[0.18em] text-white/45 uppercase">شركاء النجاح</span>
           </div>
           <div className="overflow-hidden">
-            <div className="sponsors-track">
+            <div className="sponsors-track flex items-center gap-8">
               {[...sponsors, ...sponsors].map((s, i) => (
-                <span key={i} className="text-xs font-black text-white/25 hover:text-[#C9971A] transition-colors duration-300 cursor-default whitespace-nowrap">
-                  {s.name}
-                </span>
+                s.logoUrl ? (
+                  <a
+                    key={i}
+                    href={s.websiteUrl || '#'}
+                    target={s.websiteUrl ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center shrink-0 hover:scale-110 transition-transform duration-300 mx-4"
+                  >
+                    <img
+                      src={s.logoUrl}
+                      alt={s.name}
+                      className="h-7 sm:h-9 w-auto object-contain opacity-55 hover:opacity-100 transition-opacity duration-300"
+                    />
+                  </a>
+                ) : (
+                  <span key={i} className="text-xs font-black text-white/45 hover:text-[#C9971A] transition-colors duration-300 cursor-default whitespace-nowrap mx-4">
+                    {s.name}
+                  </span>
+                )
               ))}
             </div>
           </div>

@@ -491,7 +491,7 @@ export default function VotingTab({
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-white/30 font-semibold">
+                          <span className="text-[10px] text-white/50 font-semibold">
                             أنشئت في {new Date(currentRound.createdAt).toLocaleDateString('ar-SA')}
                           </span>
                         </div>
@@ -505,7 +505,7 @@ export default function VotingTab({
 
                         <div className="grid grid-cols-1 gap-4 py-2 border-t border-b border-white/5 text-xs text-right">
                           <div>
-                            <span className="block text-white/30 font-bold">الأهداف المرشحة</span>
+                            <span className="block text-white/50 font-bold">الأهداف المرشحة</span>
                             <span className="text-[#F0C040] font-black mt-1 block">
                               {currentRound.goals.length} أهداف مرشحة
                             </span>
@@ -514,7 +514,7 @@ export default function VotingTab({
 
                         {/* قائمة أهداف الجولة وعرض الأصوات */}
                         <div className="space-y-2.5">
-                          <h4 className="text-xs font-bold text-white/40">الأهداف المرشحة في هذه الجولة:</h4>
+                          <h4 className="text-xs font-bold text-white/60">الأهداف المرشحة في هذه الجولة:</h4>
                           <div className="space-y-2 max-h-40 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                             {currentRound.goals.map((rg: any) => (
                               <div
@@ -527,7 +527,7 @@ export default function VotingTab({
                                   </div>
                                   <div className="flex flex-col">
                                     <span className="font-bold text-white">{rg.goal?.player?.name}</span>
-                                    <span className="text-[10px] text-white/30">
+                                    <span className="text-[10px] text-white/50">
                                       {rg.goal?.team?.name} • د {rg.goal?.minute}
                                     </span>
                                   </div>
@@ -538,7 +538,7 @@ export default function VotingTab({
                               </div>
                             ))}
                             {currentRound.goals.length === 0 && (
-                              <p className="text-[10px] text-white/20 text-center py-2">لا توجد أهداف مرشحة في هذه الجولة حتى الآن.</p>
+                              <p className="text-[10px] text-white/60 text-center py-2">لا توجد أهداف مرشحة في هذه الجولة حتى الآن.</p>
                             )}
                           </div>
                         </div>
@@ -585,7 +585,7 @@ export default function VotingTab({
 
                           <button
                             onClick={() => handleDeleteRound(currentRound.id)}
-                            className="p-2.5 text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-white/6 rounded-xl transition-all cursor-pointer"
+                            className="p-2.5 text-white/50 hover:text-red-400 hover:bg-red-500/10 border border-white/6 rounded-xl transition-all cursor-pointer"
                             title="حذف الجولة"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -616,7 +616,7 @@ export default function VotingTab({
                               <div className="flex items-center justify-between text-xs">
                                 <div className="flex flex-col">
                                   <span className="font-bold text-white">{rg.goal?.player?.name}</span>
-                                  <span className="text-[9px] text-white/30">{rg.goal?.team?.name}</span>
+                                  <span className="text-[9px] text-white/50">{rg.goal?.team?.name}</span>
                                 </div>
                                 <span className="bg-[#C9971A]/20 text-[#F0C040] px-2 py-0.5 rounded font-black text-[10px]">
                                   {rg.votes?.length || 0} صوت
@@ -633,8 +633,8 @@ export default function VotingTab({
                         </div>
                       </div>
                     ) : (
-                      <div className="glass-card rounded-2xl p-5 border border-white/5 text-center text-white/35 py-12">
-                        <Medal className="w-8 h-8 text-white/10 mx-auto mb-2 animate-bounce" />
+                      <div className="glass-card rounded-2xl p-5 border border-white/5 text-center text-white/55 py-12">
+                        <Medal className="w-8 h-8 text-white/45 mx-auto mb-2 animate-bounce" />
                         <p className="text-[11px] font-semibold">
                           {currentRound.status === 'draft'
                             ? 'سيتم تفعيل لوحة الفائز بعد إغلاق التصويت للجولة.'
@@ -648,9 +648,9 @@ export default function VotingTab({
                 /* إذا لم تكن هناك جولة تصويت حالية، نعرض واجهة الإنشاء */
                 <div className="max-w-xl mx-auto glass-card rounded-2xl p-6 border border-white/5 text-right space-y-6">
                   <div className="text-center space-y-2 py-4">
-                    <Medal className="w-12 h-12 text-white/15 mx-auto" />
+                    <Medal className="w-12 h-12 text-white/55 mx-auto" />
                     <h3 className="text-base font-black text-white">لا توجد جولة تصويت حالية</h3>
-                    <p className="text-xs text-white/35">أنشئ جولة تصويت جديدة لتبدأ بترشيح أهداف الجولة والبطولات.</p>
+                    <p className="text-xs text-white/55">أنشئ جولة تصويت جديدة لتبدأ بترشيح أهداف الجولة والبطولات.</p>
                   </div>
 
                   <form onSubmit={handleCreateRound} className="space-y-4">
@@ -733,7 +733,7 @@ export default function VotingTab({
                         onChange={(e) => setFilterQuery(e.target.value)}
                         className="w-full pl-4 pr-10 py-2 bg-white/4 border border-white/8 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-[#C9971A]/60 text-right"
                       />
-                      <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                      <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                     </div>
 
                     {/* فلتر البطولة */}
@@ -759,8 +759,8 @@ export default function VotingTab({
                     </div>
                   ) : goalsForNominationList.length === 0 ? (
                     <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center">
-                      <Medal className="w-8 h-8 text-white/15 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-white/30">لم يتم العثور على أهداف مطابقة للفلاتر.</p>
+                      <Medal className="w-8 h-8 text-white/55 mx-auto mb-2" />
+                      <p className="text-xs font-semibold text-white/50">لم يتم العثور على أهداف مطابقة للفلاتر.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -774,7 +774,7 @@ export default function VotingTab({
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black text-white/30 bg-white/5 px-2 py-0.5 rounded">
+                            <span className="text-[9px] font-black text-white/50 bg-white/5 px-2 py-0.5 rounded">
                               {g.match?.tournament?.name}
                             </span>
                             <span className="text-[10px] font-bold text-white/50">د {g.minute}</span>
@@ -782,10 +782,10 @@ export default function VotingTab({
 
                           <div className="space-y-1">
                             <span className="block text-xs font-black text-white">{g.player?.name}</span>
-                            <span className="block text-[10px] text-white/35 font-bold">
+                            <span className="block text-[10px] text-white/55 font-bold">
                               فريق: {g.team?.name} • {getGoalTypeLabel(g.type)}
                             </span>
-                            <span className="block text-[9px] text-white/20">
+                            <span className="block text-[9px] text-white/60">
                               مباراة: {g.match?.homeTeam?.name} ضد {g.match?.awayTeam?.name}
                             </span>
                           </div>
@@ -839,8 +839,8 @@ export default function VotingTab({
                 </>
               ) : (
                 <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
-                  <AlertCircle className="w-8 h-8 text-white/20 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-white/30">
+                  <AlertCircle className="w-8 h-8 text-white/60 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-white/50">
                     الترشيح متاح فقط عندما تكون الجولة في حالة مسودة (Draft).
                   </p>
                 </div>
@@ -854,19 +854,19 @@ export default function VotingTab({
               {/* إحصائيات عامة */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="glass-card p-5 border border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black text-white/30 uppercase">إجمالي الأصوات المصوت عليها</span>
+                  <span className="text-[10px] font-black text-white/50 uppercase">إجمالي الأصوات المصوت عليها</span>
                   <h3 className="text-2xl font-black text-[#F0C040] mt-1">
                     {currentRound.goals.reduce((acc: number, g: any) => acc + g.votes.length, 0)} صوت
                   </h3>
                 </div>
                 <div className="glass-card p-5 border border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black text-white/30 uppercase">عدد المرشحين بالترتيب</span>
+                  <span className="text-[10px] font-black text-white/50 uppercase">عدد المرشحين بالترتيب</span>
                   <h3 className="text-2xl font-black text-white mt-1">{currentRound.goals.length} أهداف</h3>
                 </div>
                 <div className="glass-card p-5 border border-white/5 rounded-2xl flex items-center justify-between">
                   <div>
-                    <span className="block text-[10px] font-black text-white/30 uppercase">تصفير أصوات الجولة</span>
-                    <span className="text-[9px] text-white/20 block mt-0.5">حذف كل الأصوات وبدء الجولة من جديد</span>
+                    <span className="block text-[10px] font-black text-white/50 uppercase">تصفير أصوات الجولة</span>
+                    <span className="text-[9px] text-white/60 block mt-0.5">حذف كل الأصوات وبدء الجولة من جديد</span>
                   </div>
                   <button
                     onClick={() => handleResetVotes(currentRound.id)}
@@ -894,10 +894,10 @@ export default function VotingTab({
                       return (
                         <div key={rg.id} className="py-4 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <span className="text-xs font-black text-white/30 font-mono w-4">#{index + 1}</span>
+                            <span className="text-xs font-black text-white/50 font-mono w-4">#{index + 1}</span>
                             <div className="flex flex-col">
                               <span className="text-xs font-bold text-white">{rg.goal?.player?.name}</span>
-                              <span className="text-[9px] text-white/30">
+                              <span className="text-[9px] text-white/50">
                                 فريق: {rg.goal?.team?.name} • د {rg.goal?.minute}
                               </span>
                             </div>
@@ -914,13 +914,13 @@ export default function VotingTab({
 
                           <div className="text-left shrink-0">
                             <span className="text-xs font-black text-[#F0C040] block">{rg.votesCount} صوت</span>
-                            <span className="text-[9px] text-white/20 font-bold block mt-0.5">{pct}%</span>
+                            <span className="text-[9px] text-white/60 font-bold block mt-0.5">{pct}%</span>
                           </div>
                         </div>
                       );
                     })}
                   {currentRound.goals.length === 0 && (
-                    <p className="text-[10px] text-white/25 text-center py-6">لا توجد أهداف مرشحة حالياً لمراقبة الأصوات.</p>
+                    <p className="text-[10px] text-white/45 text-center py-6">لا توجد أهداف مرشحة حالياً لمراقبة الأصوات.</p>
                   )}
                 </div>
               </div>
@@ -932,8 +932,8 @@ export default function VotingTab({
             <div className="space-y-4 animate-fade-in-up text-right">
               {archivedRounds.length === 0 ? (
                 <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center py-16">
-                  <Archive className="w-10 h-10 text-white/10 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-white/30">لا توجد جولات تصويت مؤرشفة بعد في المنصة.</p>
+                  <Archive className="w-10 h-10 text-white/45 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-white/50">لا توجد جولات تصويت مؤرشفة بعد في المنصة.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
@@ -951,7 +951,7 @@ export default function VotingTab({
                       >
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-black text-white">{round.title}</h3>
-                          <span className="text-[9px] font-black text-white/40 bg-white/5 px-2.5 py-0.5 rounded">
+                          <span className="text-[9px] font-black text-white/60 bg-white/5 px-2.5 py-0.5 rounded">
                             مؤرشفة
                           </span>
                         </div>
@@ -963,7 +963,7 @@ export default function VotingTab({
                               <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-[#F0C040] uppercase">الهدف الفائز بالجولة</span>
                                 <span className="font-bold text-white">{winnerGoalObj.goal?.player?.name}</span>
-                                <span className="text-[9px] text-white/30">
+                                <span className="text-[9px] text-white/50">
                                   {winnerGoalObj.goal?.team?.name} • د {winnerGoalObj.goal?.minute}
                                 </span>
                               </div>
@@ -972,13 +972,13 @@ export default function VotingTab({
                               <span className="bg-[#C9971A]/20 text-[#F0C040] px-2 py-0.5 rounded font-black text-[9px]">
                                 {winnerVotes} أصوات
                               </span>
-                              <span className="block text-[9px] text-white/20 mt-1 font-bold">
+                              <span className="block text-[9px] text-white/60 mt-1 font-bold">
                                 إجمالي: {totalVotes} صوت
                               </span>
                             </div>
                           </div>
                         ) : (
-                          <div className="p-3 bg-white/2 border border-white/6 rounded-xl text-xs text-white/35">
+                          <div className="p-3 bg-white/2 border border-white/6 rounded-xl text-xs text-white/55">
                             لا يوجد فائز معتمد للجولة.
                           </div>
                         )}
@@ -996,7 +996,7 @@ export default function VotingTab({
 
                           <button
                             onClick={() => handleDeleteRound(round.id)}
-                            className="p-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer"
+                            className="p-1 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer"
                             title="حذف الجولة من الأرشيف"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1005,7 +1005,7 @@ export default function VotingTab({
 
                         {isExpanded && (
                           <div className="pt-4 border-t border-white/5 space-y-2 animate-fade-in-up">
-                            <h4 className="text-[10px] font-bold text-white/40 mb-2">أصوات المرشحين النهائية:</h4>
+                            <h4 className="text-[10px] font-bold text-white/60 mb-2">أصوات المرشحين النهائية:</h4>
                             {round.goals.map((rg: any) => (
                               <div
                                 key={rg.id}
@@ -1016,7 +1016,7 @@ export default function VotingTab({
                                     {rg.goal?.player?.name}
                                     {rg.goalId === round.winnerGoalId && ' 👑'}
                                   </span>
-                                  <span className="text-white/30">({rg.goal?.team?.name})</span>
+                                  <span className="text-white/50">({rg.goal?.team?.name})</span>
                                 </div>
                                 <span className="font-bold text-white/70">{rg.votes?.length || 0} صوت</span>
                               </div>

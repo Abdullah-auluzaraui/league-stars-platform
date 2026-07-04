@@ -97,8 +97,8 @@ export default function LiveMatchControl({
   if (matches.length === 0) {
     return (
       <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
-        <Swords className="w-10 h-10 text-white/15 mx-auto mb-2" />
-        <p className="text-xs font-semibold text-white/30">لا توجد مباريات مسجلة حالياً لجدولتها.</p>
+        <Swords className="w-10 h-10 text-white/55 mx-auto mb-2" />
+        <p className="text-xs font-semibold text-white/50">لا توجد مباريات مسجلة حالياً لجدولتها.</p>
       </div>
     );
   }
@@ -336,7 +336,7 @@ export default function LiveMatchControl({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" dir="rtl">
       {/* العمود الأيمن: قائمة مباريات اليوم والنشطة */}
       <div className="lg:col-span-1 space-y-4">
-        <h4 className="text-xs font-black text-white/40 uppercase tracking-wider flex items-center gap-1.5">
+        <h4 className="text-xs font-black text-white/60 uppercase tracking-wider flex items-center gap-1.5">
           <Timer className="w-3.5 h-3.5 text-[#F0C040]" />
           <span>مباريات اليوم والمباريات النشطة</span>
         </h4>
@@ -354,7 +354,7 @@ export default function LiveMatchControl({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] font-black text-white/30 bg-white/5 px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-black text-white/50 bg-white/5 px-2 py-0.5 rounded">
                     {m.tournament?.name}
                   </span>
                   {m.status === 'live' ? (
@@ -381,7 +381,7 @@ export default function LiveMatchControl({
                     <span className="text-xs font-black text-white/90">
                       {m.homeScore !== null ? m.homeScore : '-'}
                     </span>
-                    <span className="text-[10px] text-white/20">:</span>
+                    <span className="text-[10px] text-white/60">:</span>
                     <span className="text-xs font-black text-white/90">
                       {m.awayScore !== null ? m.awayScore : '-'}
                     </span>
@@ -405,7 +405,7 @@ export default function LiveMatchControl({
               {/* خلفية جمالية */}
               <div className="absolute inset-0 bg-[#C9971A]/2 opacity-[0.02] pointer-events-none" />
 
-              <div className="text-[10px] font-bold text-white/40 mb-3 flex items-center gap-1 bg-white/3 px-3 py-1 rounded-full border border-white/5">
+              <div className="text-[10px] font-bold text-white/60 mb-3 flex items-center gap-1 bg-white/3 px-3 py-1 rounded-full border border-white/5">
                 <span>{activeMatch.tournament?.name}</span>
                 <span>•</span>
                 <span>{activeMatch.venue || 'بدون ملعب محدد'}</span>
@@ -423,7 +423,7 @@ export default function LiveMatchControl({
                         className="object-contain w-full h-full"
                       />
                     ) : (
-                      <Swords className="w-6 h-6 text-white/20" />
+                      <Swords className="w-6 h-6 text-white/60" />
                     )}
                   </div>
                   <span className="text-xs sm:text-sm font-black text-white truncate w-full max-w-[120px]">
@@ -437,7 +437,7 @@ export default function LiveMatchControl({
                     <span className="text-2xl sm:text-3xl font-black text-[#F0C040] font-mono leading-none">
                       {activeMatch.homeScore !== null ? activeMatch.homeScore : '-'}
                     </span>
-                    <span className="text-white/10 font-black text-xl">:</span>
+                    <span className="text-white/45 font-black text-xl">:</span>
                     <span className="text-2xl sm:text-3xl font-black text-[#F0C040] font-mono leading-none">
                       {activeMatch.awayScore !== null ? activeMatch.awayScore : '-'}
                     </span>
@@ -468,7 +468,7 @@ export default function LiveMatchControl({
                         className="object-contain w-full h-full"
                       />
                     ) : (
-                      <Swords className="w-6 h-6 text-white/20" />
+                      <Swords className="w-6 h-6 text-white/60" />
                     )}
                   </div>
                   <span className="text-xs sm:text-sm font-black text-white truncate w-full max-w-[120px]">
@@ -522,7 +522,7 @@ export default function LiveMatchControl({
               <div className="grid grid-cols-2 gap-4">
                 {/* إدخال للمستضيف */}
                 <div className="glass-card rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3">
-                  <span className="text-[10px] font-black text-white/30 truncate max-w-[150px]">
+                  <span className="text-[10px] font-black text-white/50 truncate max-w-[150px]">
                     رصد لـ: {activeMatch.homeTeam?.name}
                   </span>
                   <div className="grid grid-cols-2 gap-2 w-full">
@@ -545,7 +545,7 @@ export default function LiveMatchControl({
 
                 {/* إدخال للضيف */}
                 <div className="glass-card rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3">
-                  <span className="text-[10px] font-black text-white/30 truncate max-w-[150px]">
+                  <span className="text-[10px] font-black text-white/50 truncate max-w-[150px]">
                     رصد لـ: {activeMatch.awayTeam?.name}
                   </span>
                   <div className="grid grid-cols-2 gap-2 w-full">
@@ -595,7 +595,7 @@ export default function LiveMatchControl({
               </h4>
 
               {timelineEvents.length === 0 ? (
-                <p className="text-[10px] text-white/20 text-center py-2">لا توجد أحداث مرصودة بعد في هذه المباراة.</p>
+                <p className="text-[10px] text-white/60 text-center py-2">لا توجد أحداث مرصودة بعد في هذه المباراة.</p>
               ) : (
                 <div className="relative border-r border-white/5 pr-4 space-y-4">
                   {timelineEvents.map((evt) => {
@@ -610,7 +610,7 @@ export default function LiveMatchControl({
                           <span className="text-xs font-bold text-[#F0C040] w-8">د {evt.minute}</span>
                           <div className="flex flex-col">
                             <span className="text-xs font-semibold text-white/80">{evt.playerName}</span>
-                            <span className="text-[9px] text-white/30">
+                            <span className="text-[9px] text-white/50">
                               {evt.detail} • {isHomeEvent ? activeMatch.homeTeam?.name : activeMatch.awayTeam?.name}
                             </span>
                           </div>
@@ -620,7 +620,7 @@ export default function LiveMatchControl({
                         {activeMatch.status === 'live' && (
                           <button
                             onClick={() => (isGoal ? handleDeleteGoal(evt.id) : handleDeleteCard(evt.id))}
-                            className="p-1 text-white/25 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                            className="p-1 text-white/45 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                             title="إلغاء هذا الحدث"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -635,8 +635,8 @@ export default function LiveMatchControl({
           </div>
         ) : (
           <div className="glass-card rounded-2xl p-8 border-dashed border-white/10 text-center animate-fade-in-up">
-            <Swords className="w-8 h-8 text-white/15 mx-auto mb-2" />
-            <p className="text-xs font-semibold text-white/30">يرجى تحديد مباراة من القائمة للبدء.</p>
+            <Swords className="w-8 h-8 text-white/55 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-white/50">يرجى تحديد مباراة من القائمة للبدء.</p>
           </div>
         )}
       </div>
@@ -658,7 +658,7 @@ export default function LiveMatchControl({
               </h3>
               <button
                 onClick={() => setActiveModal(null)}
-                className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                className="p-1 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -706,7 +706,7 @@ export default function LiveMatchControl({
                 {/* نوع الهدف (إذا كان الهدف المختار) */}
                 {activeModal === 'goal' && (
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-white/40">نوع الهدف</label>
+                    <label className="block text-[11px] font-bold text-white/60">نوع الهدف</label>
                     <div className="grid grid-cols-2 gap-1.5 bg-white/3 border border-white/6 p-1 rounded-lg">
                       <button
                         type="button"
@@ -751,7 +751,7 @@ export default function LiveMatchControl({
                 {/* نوع البطاقة (إذا كانت البطاقة المختارة) */}
                 {activeModal === 'card' && (
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-white/40">نوع البطاقة</label>
+                    <label className="block text-[11px] font-bold text-white/60">نوع البطاقة</label>
                     <div className="grid grid-cols-3 gap-1 bg-white/3 border border-white/6 p-1 rounded-lg">
                       <button
                         type="button"
@@ -785,14 +785,14 @@ export default function LiveMatchControl({
                 )}
 
                 <div className="space-y-1 relative" ref={playerRef}>
-                  <label className="block text-[11px] font-bold text-white/40">اللاعب المسجل *</label>
+                  <label className="block text-[11px] font-bold text-white/60">اللاعب المسجل *</label>
                   <div
                     onClick={() => setPlayerDropdownOpen(!playerDropdownOpen)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-white/4 border border-white/8 rounded-lg text-white text-xs font-semibold hover:border-white/12 cursor-pointer"
                     dir="rtl"
                   >
                     <span className="truncate">{selectedPlayer ? `${selectedPlayer.name} ${selectedPlayer.jerseyNumber ? `(${selectedPlayer.jerseyNumber})` : ''}` : 'اختر اللاعب'}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-white/40 flex-shrink-0 mr-2 transition-transform ${playerDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-white/60 flex-shrink-0 mr-2 transition-transform ${playerDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
                   {playerDropdownOpen && (
                     <div className="absolute z-10 top-full mt-1 w-full bg-[#0e0e12] border border-white/8 rounded-xl shadow-2xl py-1 max-h-48 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full" dir="rtl">
@@ -812,7 +812,7 @@ export default function LiveMatchControl({
                         </button>
                       ))}
                       {availablePlayers.length === 0 && (
-                        <p className="text-[10px] p-2 text-white/20 text-center">لا يوجد لاعبون متاحون للتسجيل</p>
+                        <p className="text-[10px] p-2 text-white/60 text-center">لا يوجد لاعبون متاحون للتسجيل</p>
                       )}
                     </div>
                   )}
@@ -820,7 +820,7 @@ export default function LiveMatchControl({
 
                 {/* الدقيقة */}
                 <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-white/40">الدقيقة (1 - 120) *</label>
+                  <label className="block text-[11px] font-bold text-white/60">الدقيقة (1 - 120) *</label>
                   <input
                     type="number"
                     min="1"

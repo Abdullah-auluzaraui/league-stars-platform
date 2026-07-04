@@ -82,7 +82,7 @@ export default async function MatchesPage() {
             المباريات والنتائج
           </h1>
         </div>
-        <p className="text-white/40 text-sm font-medium pr-6">
+        <p className="text-white/60 text-sm font-medium pr-6">
           متابعة حية للمباريات مع تفاصيل الأهداف والبطاقات
         </p>
       </div>

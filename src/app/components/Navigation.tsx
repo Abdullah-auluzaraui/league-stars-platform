@@ -67,7 +67,7 @@ export function MobileNav() {
               className={`flex flex-col items-center justify-center gap-0.5 py-2 px-4 rounded-xl transition-all duration-300 flex-1 ${
                 isActive
                   ? 'bg-white/[0.06] text-[#F3EED9]'
-                  : 'text-white/35 hover:text-white hover:bg-white/[0.04]'
+                  : 'text-white/55 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <Icon className="w-5 h-5" />

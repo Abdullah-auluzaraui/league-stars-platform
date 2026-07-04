@@ -63,7 +63,7 @@ export default function LoginForm() {
                 className="w-full px-4 py-3.5 pr-11 rounded-xl border border-white/10 bg-black/40 text-white placeholder-white/20 focus:outline-none focus:border-[#C9971A] focus:ring-2 focus:ring-[#C9971A]/10 transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none text-right text-sm"
                 dir="rtl"
               />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-white/30 group-focus-within:text-[#F0C040] transition-colors duration-300">
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-[#F0C040] transition-colors duration-300">
                 <User className="w-5 h-5" />
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function LoginForm() {
                 dir="rtl"
               />
               {/* أيقونة القفل اليمنى */}
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-white/30 group-focus-within:text-[#F0C040] transition-colors duration-300">
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-[#F0C040] transition-colors duration-300">
                 <Lock className="w-5 h-5" />
               </div>
               {/* زر كشف كلمة المرور الأيسر */}
@@ -97,7 +97,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isPending}
-                className="absolute inset-y-0 left-0 pl-4 flex items-center text-white/30 hover:text-[#F0C040] transition-colors duration-300 disabled:opacity-50"
+                className="absolute inset-y-0 left-0 pl-4 flex items-center text-white/50 hover:text-[#F0C040] transition-colors duration-300 disabled:opacity-50"
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />
@@ -149,7 +149,7 @@ export default function LoginForm() {
 
         {/* إرشادات الأمان والخصوصية أسفل النموذج */}
         <div className="mt-6 pt-5 border-t border-white/5 text-center">
-          <p className="text-[10px] text-white/30 leading-normal font-sans">
+          <p className="text-[10px] text-white/50 leading-normal font-sans">
             هذه المنطقة مخصصة لمشرفي النظام فقط. يتم تسجيل جميع محاولات الدخول وعناوين الـ IP لأغراض الحماية والأمان.
           </p>
         </div>

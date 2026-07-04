@@ -242,7 +242,7 @@ export default function TeamModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             type="button"
           >
             <X className="w-4 h-4" />
@@ -295,7 +295,7 @@ export default function TeamModal({
                 onClick={() => fileInputRef.current?.click()}
                 className="col-span-2 border border-dashed border-white/10 hover:border-[#C9971A]/30 bg-white/2 hover:bg-white/4 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all min-h-[96px] text-center"
               >
-                <Upload className="w-5 h-5 text-white/40" />
+                <Upload className="w-5 h-5 text-white/60" />
                 <span className="text-[10px] sm:text-xs text-white/50 font-bold">تحميل شعار من جهازك</span>
               </div>
 
@@ -320,9 +320,9 @@ export default function TeamModal({
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <div className="w-9 h-9 rounded-lg bg-white/4 border border-white/8 flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-white/20" />
+                      <ImageIcon className="w-4 h-4 text-white/60" />
                     </div>
-                    <span className="text-[9px] text-white/25 font-bold">لا يوجد شعار</span>
+                    <span className="text-[9px] text-white/45 font-bold">لا يوجد شعار</span>
                   </div>
                 )}
               </div>
@@ -346,7 +346,7 @@ export default function TeamModal({
                   ? `${selectedTournament.name} (${selectedTournament.type === 'group_stage' ? 'دور مجموعات' : 'إقصائي'})`
                   : 'بدون بطولة حالياً (فريق عام)'}
               </span>
-              <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </div>
 
             {/* قائمة الخيارات العائمة الفاخرة */}
@@ -381,7 +381,7 @@ export default function TeamModal({
                     }`}
                   >
                     <span className="truncate max-w-[280px]">{t.name}</span>
-                    <span className="text-[9px] font-black text-white/35 bg-white/5 px-2 py-0.5 rounded flex-shrink-0">
+                    <span className="text-[9px] font-black text-white/55 bg-white/5 px-2 py-0.5 rounded flex-shrink-0">
                       {t.type === 'group_stage' ? 'دور مجموعات' : 'إقصائي'}
                     </span>
                   </button>
@@ -395,7 +395,7 @@ export default function TeamModal({
             <div className="space-y-3 p-4 bg-white/3 border border-white/5 rounded-xl animate-fade-in-up">
               {/* خيار يدوي / تلقائي */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-white/40">طريقة توزيع المجموعة</label>
+                <label className="block text-xs font-bold text-white/60">طريقة توزيع المجموعة</label>
                 <div className="grid grid-cols-2 gap-2 bg-white/3 border border-white/6 p-1 rounded-lg">
                   <button
                     type="button"
@@ -425,7 +425,7 @@ export default function TeamModal({
               {/* اختيار المجموعة اليدوي */}
               {groupDistribution === 'manual' && (
                 <div className="space-y-1.5 animate-fade-in-up">
-                  <label className="block text-[10px] font-bold text-white/40">اختر المجموعة *</label>
+                  <label className="block text-[10px] font-bold text-white/60">اختر المجموعة *</label>
                   <div className="flex flex-wrap gap-1.5">
                     {availableGroups.map((g) => (
                       <button
@@ -450,7 +450,7 @@ export default function TeamModal({
           {/* حالة المشاركة بالبطولة (تظهر في وضع التعديل إذا كانت البطولة مختارة) */}
           {isEditMode && tournamentId !== 'none' && (
             <div className="space-y-1.5 p-4 bg-white/3 border border-white/5 rounded-xl animate-fade-in-up">
-              <label className="block text-xs font-bold text-white/40">حالة الفريق في هذه البطولة</label>
+              <label className="block text-xs font-bold text-white/60">حالة الفريق في هذه البطولة</label>
               <div className="grid grid-cols-2 gap-2 bg-white/3 border border-white/6 p-1 rounded-lg">
                 <button
                   type="button"

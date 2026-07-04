@@ -134,7 +134,7 @@ export default async function VotesPage() {
             {data.state === "archive" ? "معرض الأهداف" : "هدف الجولة"}
           </h1>
         </div>
-        <p className="text-white/40 text-sm font-medium pr-6">
+        <p className="text-white/60 text-sm font-medium pr-6">
           {data.state === "empty" && "في انتظار انطلاق المنافسات وترشيح الأهداف"}
           {data.state === "active" && `صوّت للهدف الأجمل في الجولة الحالية (${data.roundTitle})`}
           {data.state === "archive" && "سجل الأهداف الفائزة بجولات البطولة"}
