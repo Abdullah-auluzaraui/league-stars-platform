@@ -1,6 +1,9 @@
 import { prisma } from '@/core/lib/prisma';
 import MatchesClient from './MatchesClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export type MatchWithEvents = {
   id: string;
   status: string;
@@ -37,7 +40,18 @@ async function getMatchesData(): Promise<MatchWithEvents[]> {
   try {
     const matches = await prisma.match.findMany({
       orderBy: [{ matchDate: 'desc' }],
-      include: {
+      select: {
+        id: true,
+        status: true,
+        stage: true,
+        groupName: true,
+        venue: true,
+        streamUrl: true,
+        matchDate: true,
+        homeScore: true,
+        awayScore: true,
+        homePenalty: true,
+        awayPenalty: true,
         homeTeam: { select: { id: true, name: true, logoUrl: true } },
         awayTeam: { select: { id: true, name: true, logoUrl: true } },
         goals: {
@@ -61,7 +75,8 @@ async function getMatchesData(): Promise<MatchWithEvents[]> {
       ...match,
       matchDate: match.matchDate.toISOString(),
     })) as MatchWithEvents[];
-  } catch {
+  } catch (error) {
+    console.error('Failed to load matches data', error);
     return [];
   }
 }

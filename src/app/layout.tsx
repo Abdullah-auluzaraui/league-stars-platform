@@ -1,7 +1,6 @@
 import { El_Messiri, Outfit } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar } from 'lucide-react';
 import { prisma } from '@/core/lib/prisma';
 
 const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -71,6 +70,7 @@ export default async function RootLayout({
           in: ['social_twitter', 'social_instagram', 'social_youtube', 'social_tiktok'],
         },
       },
+      select: { key: true, value: true },
     });
 
     settings.forEach((s) => {

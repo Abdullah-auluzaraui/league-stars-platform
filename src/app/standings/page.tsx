@@ -1,6 +1,9 @@
 import { prisma } from "@/core/lib/prisma";
 import StandingsClient from "./StandingsClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export type TeamStanding = {
   teamId: string;
   teamName: string;
@@ -59,13 +62,44 @@ export type StandingsData = {
 
 async function getStandingsData(): Promise<StandingsData> {
   try {
-    const groupMatches = await prisma.match.findMany({
-      where: { stage: "group", status: { in: ["finished", "live"] } },
-      include: {
-        homeTeam: { select: { id: true, name: true, logoUrl: true } },
-        awayTeam: { select: { id: true, name: true, logoUrl: true } },
-      },
-    });
+    const [groupMatches, knockoutRaw, teams, playersRaw] = await Promise.all([
+      prisma.match.findMany({
+        where: { stage: "group", status: { in: ["finished", "live"] } },
+        include: {
+          homeTeam: { select: { id: true, name: true, logoUrl: true } },
+          awayTeam: { select: { id: true, name: true, logoUrl: true } },
+        },
+      }),
+      prisma.match.findMany({
+        where: { stage: { notIn: ["group"] } },
+        orderBy: { matchDate: "asc" },
+        include: {
+          homeTeam: { select: { id: true, name: true, logoUrl: true } },
+          awayTeam: { select: { id: true, name: true, logoUrl: true } },
+        },
+      }),
+      prisma.team.findMany({
+        where: { archivedAt: null },
+        orderBy: { name: "asc" },
+        include: {
+          players: {
+            select: {
+              id: true,
+              name: true,
+              jerseyNumber: true,
+              position: true,
+              goalsCount: true,
+            },
+            orderBy: { jerseyNumber: "asc" },
+          },
+        },
+      }),
+      prisma.player.findMany({
+        where: { goalsCount: { gt: 0 }, team: { archivedAt: null } },
+        orderBy: { goalsCount: "desc" },
+        include: { team: { select: { id: true, name: true, logoUrl: true } } },
+      }),
+    ]);
 
     const standingsMap: Record<string, Record<string, TeamStanding>> = {};
 
@@ -143,15 +177,6 @@ async function getStandingsData(): Promise<StandingsData> {
       standings[groupName] = rows;
     }
 
-    const knockoutRaw = await prisma.match.findMany({
-      where: { stage: { notIn: ["group"] } },
-      orderBy: { matchDate: "asc" },
-      include: {
-        homeTeam: { select: { id: true, name: true, logoUrl: true } },
-        awayTeam: { select: { id: true, name: true, logoUrl: true } },
-      },
-    });
-
     const knockoutMatches: KnockoutMatch[] = knockoutRaw.map((match) => ({
       id: match.id,
       stage: match.stage,
@@ -164,29 +189,6 @@ async function getStandingsData(): Promise<StandingsData> {
       status: match.status,
     }));
 
-    const teams = await prisma.team.findMany({
-      where: { archivedAt: null },
-      orderBy: { name: "asc" },
-      include: {
-        players: {
-          select: {
-            id: true,
-            name: true,
-            jerseyNumber: true,
-            position: true,
-            goalsCount: true,
-          },
-          orderBy: { jerseyNumber: "asc" },
-        },
-      },
-    });
-
-    const playersRaw = await prisma.player.findMany({
-      where: { goalsCount: { gt: 0 }, team: { archivedAt: null } },
-      orderBy: { goalsCount: "desc" },
-      include: { team: { select: { id: true, name: true, logoUrl: true } } },
-    });
-
     const topScorers: TopScorer[] = playersRaw.map((player) => ({
       playerId: player.id,
       playerName: player.name,
@@ -197,7 +199,8 @@ async function getStandingsData(): Promise<StandingsData> {
     }));
 
     return { standings, knockoutMatches, teams, topScorers };
-  } catch {
+  } catch (error) {
+    console.error("Failed to load standings data", error);
     return { standings: {}, knockoutMatches: [], teams: [], topScorers: [] };
   }
 }

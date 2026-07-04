@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import HeroStats from './components/HeroStats';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // ─── Data Fetching ──────────────────────────────────────────────────────────
 
 async function getHomeData() {
@@ -26,46 +29,132 @@ async function getHomeData() {
       settingsList,
     ] =
       await Promise.all([
-        prisma.content.findUnique({ where: { section: 'hero' } }).catch(() => null),
-        prisma.tournament.findFirst({ where: { status: 'active' }, orderBy: { createdAt: 'desc' } }).catch(() => null),
+        prisma.content.findUnique({
+          where: { section: 'hero' },
+          select: { title: true, body: true },
+        }).catch((error) => {
+          console.error('Failed to load home hero content', error);
+          return null;
+        }),
+        prisma.tournament.findFirst({
+          where: { status: 'active' },
+          orderBy: { createdAt: 'desc' },
+          select: { name: true },
+        }).catch((error) => {
+          console.error('Failed to load active tournament', error);
+          return null;
+        }),
         prisma.match.findMany({
           where: { status: 'live' },
-          include: { homeTeam: { select: { name: true, logoUrl: true } }, awayTeam: { select: { name: true, logoUrl: true } } },
+          select: {
+            id: true,
+            status: true,
+            homeScore: true,
+            awayScore: true,
+            matchDate: true,
+            venue: true,
+            streamUrl: true,
+            homeTeam: { select: { name: true, logoUrl: true } },
+            awayTeam: { select: { name: true, logoUrl: true } },
+          },
           take: 3,
-        }).catch(() => []),
+        }).catch((error) => {
+          console.error('Failed to load live matches', error);
+          return [];
+        }),
         prisma.match.findFirst({
           where: { status: 'scheduled' },
-          include: { homeTeam: { select: { name: true, logoUrl: true } }, awayTeam: { select: { name: true, logoUrl: true } } },
+          select: {
+            id: true,
+            status: true,
+            homeScore: true,
+            awayScore: true,
+            matchDate: true,
+            venue: true,
+            streamUrl: true,
+            homeTeam: { select: { name: true, logoUrl: true } },
+            awayTeam: { select: { name: true, logoUrl: true } },
+          },
           orderBy: { matchDate: 'asc' },
-        }).catch(() => null),
+        }).catch((error) => {
+          console.error('Failed to load next match', error);
+          return null;
+        }),
         prisma.match.findFirst({
           where: { status: 'finished' },
-          include: { homeTeam: { select: { name: true, logoUrl: true } }, awayTeam: { select: { name: true, logoUrl: true } } },
+          select: {
+            id: true,
+            status: true,
+            homeScore: true,
+            awayScore: true,
+            matchDate: true,
+            venue: true,
+            streamUrl: true,
+            homeTeam: { select: { name: true, logoUrl: true } },
+            awayTeam: { select: { name: true, logoUrl: true } },
+          },
           orderBy: { matchDate: 'desc' },
-        }).catch(() => null),
+        }).catch((error) => {
+          console.error('Failed to load last finished match', error);
+          return null;
+        }),
         prisma.votingRoundGoal.findFirst({
           where: { round: { status: 'active' } },
-          include: {
+          select: {
             goal: {
-              include: {
+              select: {
+                videoUrl: true,
+                minute: true,
+                type: true,
                 player: { select: { name: true } },
                 team: { select: { name: true } },
-                match: { include: { homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } } },
               },
             },
           },
-        }).then((rg) => rg?.goal || null).catch(() => null),
+        }).then((rg) => rg?.goal || null).catch((error) => {
+          console.error('Failed to load active vote goal', error);
+          return null;
+        }),
         prisma.player.findMany({
           where: { goalsCount: { gt: 0 } },
-          include: { team: { select: { name: true, logoUrl: true } } },
+          select: {
+            id: true,
+            name: true,
+            goalsCount: true,
+            team: { select: { name: true, logoUrl: true } },
+          },
           orderBy: { goalsCount: 'desc' },
           take: 5,
-        }).catch(() => []),
-        prisma.sponsor.findMany({ where: { isActive: true }, orderBy: { displayOrder: 'asc' } }).catch(() => []),
-        prisma.goal.count().catch(() => 0),
-        prisma.team.count({ where: { archivedAt: null } }).catch(() => 0),
-        prisma.match.count().catch(() => 0),
-        prisma.setting.findMany().catch(() => []),
+        }).catch((error) => {
+          console.error('Failed to load top scorers', error);
+          return [];
+        }),
+        prisma.sponsor.findMany({
+          where: { isActive: true },
+          orderBy: { displayOrder: 'asc' },
+          select: { name: true, logoUrl: true, websiteUrl: true },
+        }).catch((error) => {
+          console.error('Failed to load sponsors', error);
+          return [];
+        }),
+        prisma.goal.count().catch((error) => {
+          console.error('Failed to count goals', error);
+          return 0;
+        }),
+        prisma.team.count({ where: { archivedAt: null } }).catch((error) => {
+          console.error('Failed to count teams', error);
+          return 0;
+        }),
+        prisma.match.count().catch((error) => {
+          console.error('Failed to count matches', error);
+          return 0;
+        }),
+        prisma.setting.findMany({
+          select: { key: true, value: true },
+        }).catch((error) => {
+          console.error('Failed to load home settings', error);
+          return [];
+        }),
       ]);
 
     const settingsMap: Record<string, string> = {};
@@ -74,7 +163,8 @@ async function getHomeData() {
     });
 
     return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors, goalsCount, teamsCount, matchesCount, settingsMap };
-  } catch {
+  } catch (error) {
+    console.error('Failed to load home data', error);
     return {
       hero: null, tournament: null, liveMatches: [], nextMatch: null,
       lastFinishedMatch: null, activeVoteGoal: null, topScorers: [], sponsors: [],

@@ -1,6 +1,9 @@
 import { prisma } from "@/core/lib/prisma";
 import VotesClient from "./VotesClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export type NominatedGoal = {
   id: string; // votingRoundGoalId
   goalId: string;
@@ -37,12 +40,16 @@ async function getVotingData(): Promise<VotingPageData> {
         goals: {
           include: {
             goal: {
-              include: {
+              select: {
+                id: true,
+                videoUrl: true,
+                minute: true,
+                type: true,
                 player: { select: { name: true } },
                 team: { select: { name: true, logoUrl: true } },
               },
             },
-            votes: { select: { id: true } },
+            _count: { select: { votes: true } },
           },
           orderBy: { sortOrder: "asc" },
         },
@@ -59,7 +66,7 @@ async function getVotingData(): Promise<VotingPageData> {
         videoUrl: rg.videoUrl || rg.goal.videoUrl,
         minute: rg.goal.minute,
         type: rg.goal.type,
-        voteCount: rg.votes.length,
+        voteCount: rg._count.votes,
       }));
 
       return {
@@ -77,12 +84,14 @@ async function getVotingData(): Promise<VotingPageData> {
         goals: {
           include: {
             goal: {
-              include: {
+              select: {
+                id: true,
+                videoUrl: true,
                 player: { select: { name: true } },
                 team: { select: { name: true, logoUrl: true } },
               },
             },
-            votes: { select: { id: true } },
+            _count: { select: { votes: true } },
           },
         },
       },
@@ -101,7 +110,7 @@ async function getVotingData(): Promise<VotingPageData> {
           teamName: winnerGoalObj.goal.team.name,
           teamLogoUrl: winnerGoalObj.goal.team.logoUrl,
           videoUrl: winnerGoalObj.videoUrl || winnerGoalObj.goal.videoUrl,
-          totalVotes: winnerGoalObj.votes.length,
+          totalVotes: winnerGoalObj._count.votes,
         };
       })
       .filter(Boolean) as ArchivedWinner[];
