@@ -228,6 +228,14 @@ export async function completeTournament(tournamentId: string) {
       return { success: false, error: 'يمكن إنهاء البطولات النشطة فقط' };
     }
 
+    // حماية البطولة النشطة الأساسية في نسخة العرض التجريبية
+    if (process.env.DEMO_MODE !== 'false' && existing.name === 'دوري نجوم الرياض 2026') {
+      return {
+        success: false,
+        error: 'عفواً، هذه البطولة هي البطولة الحالية النشطة في نسخة العرض ومحمية من الإنهاء لتظل المباريات المباشرة وتصويت الجولة يعملان باستمرار. يمكنك تجربة إنشاء بطولة جديدة وإنهائها!',
+      };
+    }
+
     await prisma.tournament.update({
       where: { id: tournamentId },
       data: {
@@ -260,6 +268,17 @@ export async function deleteTournament(tournamentId: string) {
 
     if (!existing) {
       return { success: false, error: 'البطولة غير موجودة' };
+    }
+
+    // حماية البطولات الأساسية في نسخة العرض التجريبية
+    if (
+      process.env.DEMO_MODE !== 'false' &&
+      (existing.name === 'دوري نجوم الرياض 2026' || existing.name === 'كأس نجوم الدوري 2025')
+    ) {
+      return {
+        success: false,
+        error: 'عفواً، هذه البطولة أساسية في نسخة العرض (Demo) ومحمية للحفاظ على استقرار الموقع للزوار الآخرين. يمكنك إنشاء بطولات جديدة وتجربة الحذف عليها بحرية!',
+      };
     }
 
     // منع الحذف للبطولات النشطة أو التي تحتوي على مباريات مسجلة

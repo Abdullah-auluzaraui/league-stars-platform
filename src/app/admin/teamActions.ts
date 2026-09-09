@@ -299,10 +299,31 @@ export async function updateTeam(formData: FormData) {
   }
 }
 
+const CORE_TEAM_NAMES = [
+  'نجوم اليرموك',
+  'صقور العاصمة',
+  'أسود طويق',
+  'شعلة النخيل',
+  'درع الصحراء',
+  'فهود نجد',
+  'أمل المروج',
+  'فرسان الملز',
+];
+
 // ─── 4. أرشفة فريق (محمي) ────────────────────────────────────────────────────────
 export async function archiveTeam(teamId: string) {
   try {
     await verifyAdmin();
+
+    if (process.env.DEMO_MODE !== 'false') {
+      const team = await prisma.team.findUnique({ where: { id: teamId }, select: { name: true } });
+      if (team && CORE_TEAM_NAMES.includes(team.name)) {
+        return {
+          success: false,
+          error: 'عفواً، هذا الفريق من الفرق الأساسية في نسخة العرض ومحمي من الأرشفة لضمان استقرار جداول الترتيب والهدافين. يمكنك إنشاء فرق جديدة وأرشفتها بحرية!',
+        };
+      }
+    }
 
     await prisma.team.update({
       where: { id: teamId },
@@ -337,6 +358,16 @@ export async function unarchiveTeam(teamId: string) {
 export async function deleteTeam(teamId: string) {
   try {
     await verifyAdmin();
+
+    if (process.env.DEMO_MODE !== 'false') {
+      const team = await prisma.team.findUnique({ where: { id: teamId }, select: { name: true } });
+      if (team && CORE_TEAM_NAMES.includes(team.name)) {
+        return {
+          success: false,
+          error: 'عفواً، هذا الفريق أساسي في نسخة العرض التجريبية ومحمي من الحذف. يمكنك إنشاء فرق جديدة وحذفها بحرية!',
+        };
+      }
+    }
 
     // فحص ما إذا كان للفريق أي مباريات مسجلة لحماية البيانات التاريخية
     const matchCount = await prisma.match.count({

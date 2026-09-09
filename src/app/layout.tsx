@@ -89,8 +89,12 @@ export default async function RootLayout({
       lang="ar"
       dir="rtl"
       className={`${elMessiri.variable} ${outfit.variable} scroll-smooth`}
+      suppressHydrationWarning
     >
-      <body className="bg-[#0e0e12] text-[#F3EED9] min-h-screen antialiased selection:bg-[#C9971A]/30 selection:text-[#F3EED9] overflow-x-hidden">
+      <body
+        className="bg-[#0e0e12] text-[#F3EED9] min-h-screen antialiased selection:bg-[#C9971A]/30 selection:text-[#F3EED9] overflow-x-hidden"
+        suppressHydrationWarning
+      >
         
         {/* شريط معاينة المشرف */}
         <PreviewBar />

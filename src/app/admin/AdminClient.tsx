@@ -29,6 +29,7 @@ import {
   ArchiveRestore,
   Search,
   Settings,
+  RotateCcw,
 } from 'lucide-react';
 import TournamentModal from './TournamentModal';
 import TeamModal from './TeamModal';
@@ -65,6 +66,7 @@ import {
 import {
   getVotingRounds,
 } from './votingActions';
+import { resetDemoData } from './actions/resetDemo';
 import { logout } from '../admin-login/actions';
 
 // ─── Types ─────────────────────────────────────────
@@ -1142,6 +1144,43 @@ export default function AdminClient({ username }: { username: string }) {
     setConfirmConfig({ ...config, isOpen: true });
   };
 
+  const [isResetting, setIsResetting] = useState(false);
+
+  // إعادة ضبط قاعدة البيانات إلى حالتها النموذجية الأصلية
+  const handleResetDemo = () => {
+    triggerConfirm({
+      title: 'استعادة بيانات العرض الأصلية',
+      message:
+        'هل ترغب في إعادة ضبط قاعدة البيانات إلى حالتها النموذجية الأصلية (Seed)؟ سيتم استعادة الفرق الـ 8، اللاعبين الـ 40، وبطولتي الدوري والكأس فوراً.',
+      confirmText: 'نعم، استعادة البيانات الأصلية',
+      cancelText: 'إلغاء',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsResetting(true);
+          const res = await resetDemoData();
+          if (res.success) {
+            showToast(res.message);
+            await Promise.all([
+              fetchTournaments(),
+              fetchTeams(),
+              fetchPlayers(),
+              fetchMatches(),
+              fetchVotingRounds(),
+              fetchSettingsAndSponsors(),
+            ]);
+          } else {
+            showToast(res.message, 'error');
+          }
+        } catch (err) {
+          showToast('فشل في استعادة البيانات التجريبية', 'error');
+        } finally {
+          setIsResetting(false);
+        }
+      },
+    });
+  };
+
   // جلب البطولات من السيرفر
   const fetchTournaments = async () => {
     try {
@@ -1674,6 +1713,18 @@ export default function AdminClient({ username }: { username: string }) {
 
           {/* الإجراءات */}
           <div className="flex items-center gap-2.5">
+            {/* زر استعادة بيانات العرض الأصلية */}
+            <button
+              onClick={handleResetDemo}
+              disabled={isResetting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50"
+              title="إعادة ضبط قاعدة البيانات إلى حالتها الأصلية النموذجية"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">إعادة ضبط الديمو</span>
+              <span className="sm:hidden">إعادة ضبط</span>
+            </button>
+
             <button
               onClick={() => {
                 sessionStorage.setItem('admin_preview', 'true');

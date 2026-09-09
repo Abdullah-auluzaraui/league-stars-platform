@@ -188,6 +188,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
               </span>
             ) : (
               <span
+                suppressHydrationWarning
                 className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
                 style={{ background: 'rgba(201,151,26,0.15)', color: 'rgba(201,151,26,0.9)', border: '1px solid rgba(201,151,26,0.3)' }}
               >
@@ -252,7 +253,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
             ) : (
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-sm md:text-xl font-black text-white/40">VS</span>
-                <span className="text-[11px] md:text-sm text-white/55 font-medium score-number">{formatTime(match.matchDate)}</span>
+                <span suppressHydrationWarning className="text-[11px] md:text-sm text-white/55 font-medium score-number">{formatTime(match.matchDate)}</span>
               </div>
             )}
           </div>
@@ -276,7 +277,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
             {isFinished && (
               <>
                 <span>·</span>
-                <span className="flex items-center gap-1">
+                <span suppressHydrationWarning className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {formatDate(match.matchDate)}
                 </span>
@@ -466,7 +467,7 @@ export default function MatchesClient({
         <div className="rounded-2xl border border-white/[0.07] bg-black/15 px-3 py-2.5 md:hidden animate-fade-in-up" style={{ animationDelay: '30ms' }}>
           <div className="flex items-center justify-between gap-3">
             <span className="text-[11px] font-bold text-white/45">أقرب مباراة</span>
-            <span className="text-[11px] font-black text-[#F0C040] score-number">{formatTime(nextScheduled.matchDate)}</span>
+            <span suppressHydrationWarning className="text-[11px] font-black text-[#F0C040] score-number">{formatTime(nextScheduled.matchDate)}</span>
           </div>
           <p className="mt-1 truncate text-xs font-black text-white/85">
             {nextScheduled.homeTeam.name} <span className="text-white/35">VS</span> {nextScheduled.awayTeam.name}
@@ -483,7 +484,7 @@ export default function MatchesClient({
                 <p className="truncate text-lg font-black text-white">
                   {nextScheduled.homeTeam.name} <span className="text-white/35">VS</span> {nextScheduled.awayTeam.name}
                 </p>
-                <p className="mt-1.5 text-xs font-semibold text-white/45">
+                <p suppressHydrationWarning className="mt-1.5 text-xs font-semibold text-white/45">
                   {formatDate(nextScheduled.matchDate)} · {formatTime(nextScheduled.matchDate)}
                 </p>
               </div>
