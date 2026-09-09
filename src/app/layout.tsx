@@ -33,6 +33,7 @@ import './globals.css';
 import { DesktopNav, MobileNav } from './components/Navigation';
 import NavVisibilityWrapper from './components/NavVisibilityWrapper';
 import PreviewBar from './components/PreviewBar';
+import DemoBanner from './components/DemoBanner';
 
 const elMessiri = El_Messiri({
   subsets: ['arabic'],
@@ -93,6 +94,9 @@ export default async function RootLayout({
         
         {/* شريط معاينة المشرف */}
         <PreviewBar />
+
+        {/* شريط الديمو التجريبي */}
+        <DemoBanner />
 
         {/* الحاوية الرئيسية */}
         <div className="relative min-h-screen w-full flex flex-col">

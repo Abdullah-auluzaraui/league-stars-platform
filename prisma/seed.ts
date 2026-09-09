@@ -3,20 +3,24 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// أسماء عربية واقعية للاعبين
-const firstNames = ['خالد', 'محمد', 'عبدالرحمن', 'سعد', 'ياسر', 'سلطان', 'فهد', 'عبدالله', 'سلمان', 'علي', 'عمر', 'فيصل', 'صالح', 'أحمد', 'عبدالعزيز'];
-const lastNames = ['الدوسري', 'العتيبي', 'الشمري', 'القحطاني', 'الشهري', 'العنزي', 'المطيري', 'الحربي', 'الغامدي', 'الزهراني', 'المالكي', 'البقمي'];
+// أسماء واقعية للاعبين
+const firstNames = [
+  'محمد', 'عبدالله', 'سلطان', 'خالد', 'فهد', 'عبدالرحمن', 'سعود', 'ياسر',
+  'فيصل', 'عمر', 'سلمان', 'علي', 'تركي', 'عبدالعزيز', 'سعد', 'نواف'
+];
+const lastNames = [
+  'الدوسري', 'القحطاني', 'العتيبي', 'الشمري', 'الشهري', 'العنزي', 'المطيري',
+  'الحربي', 'الغامدي', 'الزهراني', 'المالكي', 'السبيعي', 'الرويلي', 'البقمي'
+];
 
-function getRandomArabicName() {
-  const f = firstNames[Math.floor(Math.random() * firstNames.length)];
-  const l = lastNames[Math.floor(Math.random() * lastNames.length)];
+function getRandomName(seedIndex: number): string {
+  const f = firstNames[seedIndex % firstNames.length];
+  const l = lastNames[(seedIndex * 3) % lastNames.length];
   return `${f} ${l}`;
 }
 
 async function cleanDatabase() {
-  console.log('تنظيف قاعدة البيانات...');
-  
-  // حذف السجلات بالترتيب الصحيح لتفادي قيود العلاقات ForeignKey Constraints
+  console.log('🧹 تنظيف قاعدة البيانات...');
   await prisma.goalVote.deleteMany({});
   await prisma.votingRoundGoal.deleteMany({});
   await prisma.votingRound.deleteMany({});
@@ -30,17 +34,18 @@ async function cleanDatabase() {
   await prisma.sponsor.deleteMany({});
   await prisma.content.deleteMany({});
   await prisma.setting.deleteMany({});
-  
-  console.log('اكتمل تنظيف قاعدة البيانات.');
+  console.log('✅ تم تفريغ الجداول بنجاح.');
 }
 
 async function seed() {
+  // ─────────────────────────────────────────────────────────────
   // 1. المشرف الافتراضي
-  console.log('إنشاء المشرف الافتراضي...');
+  // ─────────────────────────────────────────────────────────────
+  console.log('👤 إنشاء حساب المشرف...');
   const passwordHash = await bcrypt.hash('Admin@2026', 10);
   await prisma.user.upsert({
     where: { username: 'admin' },
-    update: { passwordHash },
+    update: { passwordHash, role: 'admin' },
     create: {
       username: 'admin',
       passwordHash,
@@ -48,8 +53,11 @@ async function seed() {
     },
   });
 
-  // 2. المحتوى الترحيبي (Hero Section)
-  console.log('تهيئة المحتوى النصي...');
+  // ─────────────────────────────────────────────────────────────
+  // 2. المحتوى العام والإعدادات
+  // ─────────────────────────────────────────────────────────────
+  console.log('⚙️ إعداد المحتوى النصي والإعدادات العامة...');
+  
   await prisma.content.create({
     data: {
       section: 'hero',
@@ -59,440 +67,580 @@ async function seed() {
     },
   });
 
+  await prisma.content.create({
+    data: {
+      section: 'about',
+      title: 'عن البطولة',
+      body: 'انطلقت بطولة نجوم الرياض لتجمع صفوة الرياضيين والفرق في منافسة شريفة تسعى لتطوير الرياضة المجتمعية وإبراز المواهب الكروية الشابة.',
+    },
+  });
+
+  await prisma.content.create({
+    data: {
+      section: 'vision',
+      title: 'رؤيتنا',
+      body: 'المساهمة في تحقيق مستهدفات رؤية 2030 الرياضية عبر نشر ممارسة كرة القدم وتعزيز التنافسية الرياضية بين شباب الوطن.',
+    },
+  });
+
+  const defaultSettings = [
+    { key: 'tournament_name', value: 'دوري نجوم الرياض 2026' },
+    { key: 'voting_enabled', value: 'true' },
+    { key: 'site_title', value: 'League Stars | بطولة نجوم الدوري' },
+    { key: 'contact_email', value: 'contact@leaguestars.sa' },
+    { key: 'contact_phone', value: '+966500000000' },
+    { key: 'social_twitter', value: 'https://x.com' },
+    { key: 'social_instagram', value: 'https://instagram.com' },
+    { key: 'social_tiktok', value: 'https://tiktok.com' },
+  ];
+
+  for (const s of defaultSettings) {
+    await prisma.setting.create({ data: s });
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // 3. الرعاة الرسميون
-  console.log('إضافة الرعاة...');
-  const sponsorsData = [
+  // ─────────────────────────────────────────────────────────────
+  console.log('🤝 إضافة الرعاة الرسميين...');
+  const sponsors = [
     {
       name: 'روشن العقارية',
-      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=Roshn&backgroundColor=b91c1c',
+      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=ROSHN&backgroundColor=991b1b',
       websiteUrl: 'https://www.roshn.sa',
       displayOrder: 1,
     },
     {
       name: 'طيران الرياض',
-      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=RiyadhAir&backgroundColor=4338ca',
+      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=RiyadhAir&backgroundColor=312e81',
       websiteUrl: 'https://www.riyadhair.com',
       displayOrder: 2,
     },
     {
       name: 'مشاريع القدية',
-      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=Qiddiya&backgroundColor=059669',
+      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=Qiddiya&backgroundColor=065f46',
       websiteUrl: 'https://qiddiya.com',
       displayOrder: 3,
     },
     {
-      name: 'الشريك الرياضي للملابس',
-      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=SportStore&backgroundColor=d97706',
-      websiteUrl: null,
+      name: 'رد بُل للطاقة',
+      logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=RedBull&backgroundColor=1e3a8a',
+      websiteUrl: 'https://www.redbull.com',
       displayOrder: 4,
     },
   ];
 
-  for (const s of sponsorsData) {
-    await prisma.sponsor.create({ data: s });
+  for (const sp of sponsors) {
+    await prisma.sponsor.create({ data: sp });
   }
 
-  // 4. البطولات
-  console.log('إنشاء البطولات...');
-  const activeTournament = await prisma.tournament.create({
+  // ─────────────────────────────────────────────────────────────
+  // 4. إنشاء الفرق واللاعبين (8 فرق متميزة)
+  // ─────────────────────────────────────────────────────────────
+  console.log('🛡️ إنشاء الفرق واللاعبين...');
+  const teamDefs = [
+    { name: 'نجوم اليرموك', color: 'b45309' },
+    { name: 'صقور العاصمة', color: '1e40af' },
+    { name: 'أسود طويق', color: '991b1b' },
+    { name: 'شعلة النخيل', color: 'c2410c' },
+    { name: 'درع الصحراء', color: '3f6212' },
+    { name: 'فهود نجد', color: '854d0e' },
+    { name: 'أمل المروج', color: '0f766e' },
+    { name: 'فرسان الملز', color: '4338ca' },
+  ];
+
+  type CreatedTeam = {
+    team: any;
+    players: any[];
+  };
+
+  const teamsData: CreatedTeam[] = [];
+  let playerCounter = 0;
+
+  for (const tDef of teamDefs) {
+    const team = await prisma.team.create({
+      data: {
+        name: tDef.name,
+        logoUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(tDef.name)}&backgroundColor=${tDef.color}`,
+      },
+    });
+
+    const positions = [
+      { pos: 'goalkeeper', num: 1 },
+      { pos: 'defender', num: 4 },
+      { pos: 'midfielder', num: 6 },
+      { pos: 'midfielder', num: 8 },
+      { pos: 'forward', num: 10 },
+    ];
+
+    const players = [];
+    for (const p of positions) {
+      playerCounter++;
+      const playerName = getRandomName(playerCounter);
+      const createdPlayer = await prisma.player.create({
+        data: {
+          name: playerName,
+          jerseyNumber: p.num,
+          position: p.pos,
+          teamId: team.id,
+          photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(playerName)}`,
+        },
+      });
+      players.push(createdPlayer);
+    }
+
+    teamsData.push({ team, players });
+  }
+
+  // مسميات الفرق للتسهيل
+  const [
+    yarmouk,   // نجوم اليرموك
+    suqoor,    // صقور العاصمة
+    tuwaiq,    // أسود طويق
+    nakheel,   // شعلة النخيل
+    sahraa,    // درع الصحراء
+    najd,      // فهود نجد
+    murooj,    // أمل المروج
+    malaz,     // فرسان الملز
+  ] = teamsData;
+
+  // ─────────────────────────────────────────────────────────────
+  // 5. البطولة المكتملة: "كأس نجوم الدوري 2025" (Knockout Cup)
+  // ─────────────────────────────────────────────────────────────
+  console.log('🏆 إنشاء البطولة المكتملة (كأس نجوم الدوري 2025)...');
+  const pastCup = await prisma.tournament.create({
+    data: {
+      name: 'كأس نجوم الدوري 2025',
+      type: 'knockout',
+      status: 'completed',
+      groupCount: 1,
+      qualifyingTeams: 1,
+      startDate: new Date('2025-10-15T18:00:00Z'),
+      endDate: new Date('2025-11-05T21:30:00Z'),
+    },
+  });
+
+  // ربط جميع الفرق الـ 8 ببطولة الكأس
+  for (const td of teamsData) {
+    await prisma.tournamentTeam.create({
+      data: {
+        tournamentId: pastCup.id,
+        teamId: td.team.id,
+        status: 'active',
+      },
+    });
+  }
+
+  // مباريات ربع النهائي (Quarter-finals) - 4 مباريات
+  // 1. نجوم اليرموك 3 - 1 فرسان الملز
+  const qf1 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: yarmouk.team.id,
+      awayTeamId: malaz.team.id,
+      homeScore: 3,
+      awayScore: 1,
+      status: 'finished',
+      stage: 'quarter',
+      venue: 'استاد النجوم الرئيسي',
+      matchDate: new Date('2025-10-20T18:00:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: qf1.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 19, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: qf1.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 54, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: qf1.id, playerId: yarmouk.players[3].id, teamId: yarmouk.team.id, minute: 76, type: 'penalty' } });
+  await prisma.goal.create({ data: { matchId: qf1.id, playerId: malaz.players[4].id, teamId: malaz.team.id, minute: 82, type: 'normal' } });
+
+  // 2. أسود طويق 2 - 1 فهود نجد
+  const qf2 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: tuwaiq.team.id,
+      awayTeamId: najd.team.id,
+      homeScore: 2,
+      awayScore: 1,
+      status: 'finished',
+      stage: 'quarter',
+      venue: 'ملعب النجوم الفرعي 1',
+      matchDate: new Date('2025-10-20T20:30:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: qf2.id, playerId: tuwaiq.players[4].id, teamId: tuwaiq.team.id, minute: 31, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: qf2.id, playerId: tuwaiq.players[3].id, teamId: tuwaiq.team.id, minute: 68, type: 'free_kick' } });
+  await prisma.goal.create({ data: { matchId: qf2.id, playerId: najd.players[4].id, teamId: najd.team.id, minute: 79, type: 'normal' } });
+
+  // 3. صقور العاصمة 2 - 0 أمل المروج
+  const qf3 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: suqoor.team.id,
+      awayTeamId: murooj.team.id,
+      homeScore: 2,
+      awayScore: 0,
+      status: 'finished',
+      stage: 'quarter',
+      venue: 'استاد النجوم الرئيسي',
+      matchDate: new Date('2025-10-21T18:00:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: qf3.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 25, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: qf3.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 60, type: 'normal' } });
+
+  // 4. شعلة النخيل 1 - 0 درع الصحراء
+  const qf4 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: nakheel.team.id,
+      awayTeamId: sahraa.team.id,
+      homeScore: 1,
+      awayScore: 0,
+      status: 'finished',
+      stage: 'quarter',
+      venue: 'ملعب النجوم الفرعي 1',
+      matchDate: new Date('2025-10-21T20:30:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: qf4.id, playerId: nakheel.players[4].id, teamId: nakheel.team.id, minute: 44, type: 'normal' } });
+
+  // نصف النهائي (Semi-finals) - مباراتان
+  // 5. نجوم اليرموك 2 - 1 أسود طويق
+  const sf1 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: yarmouk.team.id,
+      awayTeamId: tuwaiq.team.id,
+      homeScore: 2,
+      awayScore: 1,
+      status: 'finished',
+      stage: 'semi',
+      venue: 'استاد النجوم الرئيسي',
+      matchDate: new Date('2025-10-28T19:00:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: sf1.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 15, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: sf1.id, playerId: tuwaiq.players[4].id, teamId: tuwaiq.team.id, minute: 40, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: sf1.id, playerId: yarmouk.players[3].id, teamId: yarmouk.team.id, minute: 88, type: 'normal' } });
+
+  // 6. صقور العاصمة 3 - 2 شعلة النخيل
+  const sf2 = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: suqoor.team.id,
+      awayTeamId: nakheel.team.id,
+      homeScore: 3,
+      awayScore: 2,
+      status: 'finished',
+      stage: 'semi',
+      venue: 'استاد النجوم الرئيسي',
+      matchDate: new Date('2025-10-29T19:00:00Z'),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: sf2.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 10, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: sf2.id, playerId: nakheel.players[4].id, teamId: nakheel.team.id, minute: 22, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: sf2.id, playerId: suqoor.players[3].id, teamId: suqoor.team.id, minute: 58, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: sf2.id, playerId: nakheel.players[3].id, teamId: nakheel.team.id, minute: 71, type: 'penalty' } });
+  await prisma.goal.create({ data: { matchId: sf2.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 85, type: 'normal' } });
+
+  // النهائي الكبير (Final)
+  // 7. نجوم اليرموك 3 - 2 صقور العاصمة (تتويج نجوم اليرموك)
+  const finalMatch = await prisma.match.create({
+    data: {
+      tournamentId: pastCup.id,
+      homeTeamId: yarmouk.team.id,
+      awayTeamId: suqoor.team.id,
+      homeScore: 3,
+      awayScore: 2,
+      status: 'finished',
+      stage: 'final',
+      venue: 'استاد النجوم الرئيسي (النهائي الكبير)',
+      matchDate: new Date('2025-11-05T20:00:00Z'),
+    },
+  });
+  const finalGoal1 = await prisma.goal.create({ data: { matchId: finalMatch.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 18, type: 'normal', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' } });
+  await prisma.goal.create({ data: { matchId: finalMatch.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 34, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: finalMatch.id, playerId: yarmouk.players[3].id, teamId: yarmouk.team.id, minute: 52, type: 'free_kick', videoUrl: 'https://www.w3schools.com/html/movie.mp4' } });
+  await prisma.goal.create({ data: { matchId: finalMatch.id, playerId: suqoor.players[3].id, teamId: suqoor.team.id, minute: 69, type: 'normal' } });
+  const finalGoal5 = await prisma.goal.create({ data: { matchId: finalMatch.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 89, type: 'normal', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' } });
+
+  await prisma.card.create({ data: { matchId: finalMatch.id, playerId: suqoor.players[1].id, teamId: suqoor.team.id, type: 'yellow', minute: 42 } });
+  await prisma.card.create({ data: { matchId: finalMatch.id, playerId: yarmouk.players[1].id, teamId: yarmouk.team.id, type: 'yellow', minute: 75 } });
+
+  // ─────────────────────────────────────────────────────────────
+  // 6. البطولة الحالية: "دوري نجوم الرياض 2026" (Active League)
+  // ─────────────────────────────────────────────────────────────
+  console.log('⚽ إنشاء البطولة النشطة (دوري نجوم الرياض 2026)...');
+  const activeLeague = await prisma.tournament.create({
     data: {
       name: 'دوري نجوم الرياض 2026',
       type: 'group_stage',
       status: 'active',
       groupCount: 2,
       qualifyingTeams: 2,
-      startDate: new Date('2026-03-01T20:00:00Z'),
-      endDate: new Date('2026-04-01T22:00:00Z'),
+      startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     },
   });
 
-  const upcomingTournament = await prisma.tournament.create({
-    data: {
-      name: 'كأس النجوم الصيفية 2026',
-      type: 'knockout',
-      status: 'upcoming',
-      groupCount: 1,
-      qualifyingTeams: 1,
-      startDate: new Date('2026-07-15T18:00:00Z'),
-      endDate: new Date('2026-08-15T21:00:00Z'),
-    },
-  });
-
-  // 5. الفرق والمجموعات
-  console.log('إنشاء الفرق واللاعبين...');
-  const groupATeamNames = ['النسور', 'الأسود', 'الصقور', 'الوحوش'];
-  const groupBTeamNames = ['الأبطال', 'الرياح', 'البرق', 'الثعالب'];
-
-  const allTeams: any[] = [];
-  
-  // دالة مساعدة لإنشاء فريق ولاعبيه
-  const createTeamWithPlayers = async (name: string, groupName: string) => {
-    // إنشاء الفريق
-    const team = await prisma.team.create({
-      data: {
-        name,
-        logoUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(name)}&backgroundColor=0e0e12`,
-      },
-    });
-
-    // ربطه بالبطولة النشطة في مجموعته
+  // ربط المجموعتين:
+  // المجموعة A: نجوم اليرموك، أسود طويق، شعلة النخيل، درع الصحراء
+  const groupATeams = [yarmouk, tuwaiq, nakheel, sahraa];
+  for (const t of groupATeams) {
     await prisma.tournamentTeam.create({
       data: {
-        tournamentId: activeTournament.id,
-        teamId: team.id,
-        groupName,
+        tournamentId: activeLeague.id,
+        teamId: t.team.id,
+        groupName: 'A',
         status: 'active',
       },
     });
-
-    // إنشاء 5 لاعبين بمراكز محددة لتجنب تعارض أرقام القمصان
-    const playerPositions = [
-      { pos: 'goalkeeper', num: 1 },
-      { pos: 'defender', num: 4 },
-      { pos: 'midfielder', num: 8 },
-      { pos: 'midfielder', num: 10 },
-      { pos: 'forward', num: 9 },
-    ];
-
-    const players: any[] = [];
-    for (const pInfo of playerPositions) {
-      const player = await prisma.player.create({
-        data: {
-          name: getRandomArabicName(),
-          jerseyNumber: pInfo.num,
-          position: pInfo.pos,
-          teamId: team.id,
-          photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name + pInfo.num)}`,
-        },
-      });
-      players.push(player);
-    }
-
-    return { team, players };
-  };
-
-  const groupAData: any[] = [];
-  const groupBData: any[] = [];
-
-  for (const name of groupATeamNames) {
-    const data = await createTeamWithPlayers(name, 'A');
-    groupAData.push(data);
-    allTeams.push(data.team);
   }
 
-  for (const name of groupBTeamNames) {
-    const data = await createTeamWithPlayers(name, 'B');
-    groupBData.push(data);
-    allTeams.push(data.team);
+  // المجموعة B: صقور العاصمة، فهود نجد، أمل المروج، فرسان الملز
+  const groupBTeams = [suqoor, najd, murooj, malaz];
+  for (const t of groupBTeams) {
+    await prisma.tournamentTeam.create({
+      data: {
+        tournamentId: activeLeague.id,
+        teamId: t.team.id,
+        groupName: 'B',
+        status: 'active',
+      },
+    });
   }
 
-  // 6. مباريات المجموعة A (مباراتين منتهية، مباراة جارية، ومباراة مجدولة)
-  console.log('إنشاء مباريات وأحداث المجموعة A...');
-  
-  // مباراة 1: النسور ضد الأسود (منتهية: 3 - 1)
-  const matchA1 = await prisma.match.create({
+  // ── مباريات المجموعة A (5 منتهية + 1 جارية مباشرة الآن) ──
+  // مباراة 1: نجوم اليرموك 3 - 1 أسود طويق (منتهية)
+  const a1 = await prisma.match.create({
     data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupAData[0].team.id, // النسور
-      awayTeamId: groupAData[1].team.id, // الأسود
+      tournamentId: activeLeague.id,
+      homeTeamId: yarmouk.team.id,
+      awayTeamId: tuwaiq.team.id,
       homeScore: 3,
       awayScore: 1,
       status: 'finished',
       stage: 'group',
       groupName: 'A',
       venue: 'ملعب النجوم الفرعي 1',
-      matchDate: new Date('2026-03-05T20:00:00Z'),
+      matchDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
     },
   });
+  await prisma.goal.create({ data: { matchId: a1.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 23, type: 'normal' } });
+  const a1Goal2 = await prisma.goal.create({ data: { matchId: a1.id, playerId: yarmouk.players[3].id, teamId: yarmouk.team.id, minute: 45, type: 'free_kick', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' } });
+  await prisma.goal.create({ data: { matchId: a1.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 67, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a1.id, playerId: tuwaiq.players[4].id, teamId: tuwaiq.team.id, minute: 80, type: 'penalty' } });
 
-  // تسجيل أهداف لمباراة 1
-  // هدافو النسور (اللاعب ذو الرقم 9 أحرز هدفين، والرقم 10 أحرز هدف)
-  const goalA1_1 = await prisma.goal.create({
+  // مباراة 2: شعلة النخيل 2 - 0 درع الصحراء (منتهية)
+  const a2 = await prisma.match.create({
     data: {
-      matchId: matchA1.id,
-      playerId: groupAData[0].players[4].id, // مهاجم النسور (رقم 9)
-      teamId: groupAData[0].team.id,
-      minute: 15,
-      type: 'normal',
-    },
-  });
-
-  const goalA1_2 = await prisma.goal.create({
-    data: {
-      matchId: matchA1.id,
-      playerId: groupAData[0].players[4].id, // مهاجم النسور (رقم 9)
-      teamId: groupAData[0].team.id,
-      minute: 42,
-      type: 'normal',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', // فيديو تجريبي
-    },
-  });
-
-  const goalA1_3 = await prisma.goal.create({
-    data: {
-      matchId: matchA1.id,
-      playerId: groupAData[0].players[3].id, // وسط النسور (رقم 10)
-      teamId: groupAData[0].team.id,
-      minute: 73,
-      type: 'penalty',
-    },
-  });
-
-  // هداف الأسود (اللاعب ذو الرقم 9 أحرز هدف)
-  const goalA1_4 = await prisma.goal.create({
-    data: {
-      matchId: matchA1.id,
-      playerId: groupAData[1].players[4].id, // مهاجم الأسود (رقم 9)
-      teamId: groupAData[1].team.id,
-      minute: 88,
-      type: 'normal',
-      videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-    },
-  });
-
-  // تسجيل بطاقات لمباراة 1
-  await prisma.card.create({
-    data: {
-      matchId: matchA1.id,
-      playerId: groupAData[0].players[1].id, // مدافع النسور
-      teamId: groupAData[0].team.id,
-      type: 'yellow',
-      minute: 34,
-    },
-  });
-
-  await prisma.card.create({
-    data: {
-      matchId: matchA1.id,
-      playerId: groupAData[1].players[2].id, // وسط الأسود
-      teamId: groupAData[1].team.id,
-      type: 'yellow',
-      minute: 60,
-    },
-  });
-
-  // مباراة 2: الصقور ضد الوحوش (منتهية: 0 - 2)
-  const matchA2 = await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupAData[2].team.id, // الصقور
-      awayTeamId: groupAData[3].team.id, // الوحوش
-      homeScore: 0,
-      awayScore: 2,
+      tournamentId: activeLeague.id,
+      homeTeamId: nakheel.team.id,
+      awayTeamId: sahraa.team.id,
+      homeScore: 2,
+      awayScore: 0,
       status: 'finished',
       stage: 'group',
       groupName: 'A',
       venue: 'ملعب النجوم الفرعي 2',
-      matchDate: new Date('2026-03-05T22:00:00Z'),
+      matchDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
     },
   });
+  await prisma.goal.create({ data: { matchId: a2.id, playerId: nakheel.players[4].id, teamId: nakheel.team.id, minute: 35, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a2.id, playerId: nakheel.players[3].id, teamId: nakheel.team.id, minute: 78, type: 'normal' } });
 
-  const goalA2_1 = await prisma.goal.create({
+  // مباراة 3: نجوم اليرموك 2 - 2 شعلة النخيل (منتهية)
+  const a3 = await prisma.match.create({
     data: {
-      matchId: matchA2.id,
-      playerId: groupAData[3].players[4].id, // مهاجم الوحوش (رقم 9)
-      teamId: groupAData[3].team.id,
-      minute: 30,
-      type: 'normal',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    },
-  });
-
-  const goalA2_2 = await prisma.goal.create({
-    data: {
-      matchId: matchA2.id,
-      playerId: groupAData[3].players[3].id, // وسط الوحوش (رقم 10)
-      teamId: groupAData[3].team.id,
-      minute: 65,
-      type: 'normal',
-    },
-  });
-
-  // مباراة 3: النسور ضد الصقور (مباشرة الآن: 1 - 1)
-  const matchA3 = await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupAData[0].team.id, // النسور
-      awayTeamId: groupAData[2].team.id, // الصقور
-      homeScore: 1,
-      awayScore: 1,
-      status: 'live',
-      stage: 'group',
-      groupName: 'A',
-      venue: 'ملعب النجوم الرئيسي',
-      matchDate: new Date(), // الآن
-    },
-  });
-
-  // أهداف المباراة المباشرة
-  await prisma.goal.create({
-    data: {
-      matchId: matchA3.id,
-      playerId: groupAData[0].players[4].id, // مهاجم النسور
-      teamId: groupAData[0].team.id,
-      minute: 12,
-      type: 'normal',
-    },
-  });
-
-  await prisma.goal.create({
-    data: {
-      matchId: matchA3.id,
-      playerId: groupAData[2].players[4].id, // مهاجم الصقور
-      teamId: groupAData[2].team.id,
-      minute: 55,
-      type: 'normal',
-    },
-  });
-
-  // مباراة 4: الأسود ضد الوحوش (مجدولة/قادمة)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(20, 0, 0, 0);
-
-  await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupAData[1].team.id, // الأسود
-      awayTeamId: groupAData[3].team.id, // الوحوش
-      status: 'scheduled',
-      stage: 'group',
-      groupName: 'A',
-      venue: 'ملعب النجوم الرئيسي',
-      matchDate: tomorrow,
-    },
-  });
-
-  // 7. مباريات المجموعة B (مباراتين منتهية، ومباراتين مجدولتين)
-  console.log('إنشاء مباريات وأحداث المجموعة B...');
-  
-  // مباراة 5: الأبطال ضد الرياح (منتهية: 2 - 2)
-  const matchB1 = await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupBData[0].team.id, // الأبطال
-      awayTeamId: groupBData[1].team.id, // الرياح
+      tournamentId: activeLeague.id,
+      homeTeamId: yarmouk.team.id,
+      awayTeamId: nakheel.team.id,
       homeScore: 2,
       awayScore: 2,
       status: 'finished',
       stage: 'group',
+      groupName: 'A',
+      venue: 'ملعب النجوم الفرعي 1',
+      matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: a3.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 14, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a3.id, playerId: nakheel.players[4].id, teamId: nakheel.team.id, minute: 39, type: 'normal' } });
+  const a3Goal3 = await prisma.goal.create({ data: { matchId: a3.id, playerId: nakheel.players[3].id, teamId: nakheel.team.id, minute: 61, type: 'normal', videoUrl: 'https://www.w3schools.com/html/movie.mp4' } });
+  await prisma.goal.create({ data: { matchId: a3.id, playerId: yarmouk.players[3].id, teamId: yarmouk.team.id, minute: 84, type: 'normal' } });
+
+  // مباراة 4: أسود طويق 1 - 0 درع الصحراء (منتهية)
+  const a4 = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: tuwaiq.team.id,
+      awayTeamId: sahraa.team.id,
+      homeScore: 1,
+      awayScore: 0,
+      status: 'finished',
+      stage: 'group',
+      groupName: 'A',
+      venue: 'ملعب النجوم الفرعي 2',
+      matchDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: a4.id, playerId: tuwaiq.players[4].id, teamId: tuwaiq.team.id, minute: 52, type: 'normal' } });
+
+  // مباراة 5: درع الصحراء 1 - 3 نجوم اليرموك (منتهية)
+  const a5 = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: sahraa.team.id,
+      awayTeamId: yarmouk.team.id,
+      homeScore: 1,
+      awayScore: 3,
+      status: 'finished',
+      stage: 'group',
+      groupName: 'A',
+      venue: 'ملعب النجوم الفرعي 1',
+      matchDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: a5.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 18, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a5.id, playerId: sahraa.players[4].id, teamId: sahraa.team.id, minute: 44, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a5.id, playerId: yarmouk.players[4].id, teamId: yarmouk.team.id, minute: 70, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a5.id, playerId: yarmouk.players[2].id, teamId: yarmouk.team.id, minute: 86, type: 'normal' } });
+
+  // مباراة 6: أسود طويق 2 - 1 شعلة النخيل (مباشرة الآن - LIVE!)
+  // ملاحظة هامة: لا يظهر تاريخ للمباراة المباشرة في الواجهة، ونستخدم التاريخ الحالي فقط لمتطلبات قاعدة البيانات.
+  const a6Live = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: tuwaiq.team.id,
+      awayTeamId: nakheel.team.id,
+      homeScore: 2,
+      awayScore: 1,
+      status: 'live',
+      stage: 'group',
+      groupName: 'A',
+      venue: 'استاد النجوم الرئيسي',
+      matchDate: new Date(),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: a6Live.id, playerId: tuwaiq.players[4].id, teamId: tuwaiq.team.id, minute: 14, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: a6Live.id, playerId: nakheel.players[4].id, teamId: nakheel.team.id, minute: 38, type: 'normal' } });
+  const liveGoal3 = await prisma.goal.create({ data: { matchId: a6Live.id, playerId: tuwaiq.players[3].id, teamId: tuwaiq.team.id, minute: 62, type: 'normal', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' } });
+
+  await prisma.card.create({ data: { matchId: a6Live.id, playerId: tuwaiq.players[1].id, teamId: tuwaiq.team.id, type: 'yellow', minute: 41 } });
+
+  // ── مباريات المجموعة B (جميع المباريات الـ 6 منتهية) ──
+  // مباراة 1: صقور العاصمة 2 - 1 فهود نجد (منتهية)
+  const b1 = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: suqoor.team.id,
+      awayTeamId: najd.team.id,
+      homeScore: 2,
+      awayScore: 1,
+      status: 'finished',
+      stage: 'group',
       groupName: 'B',
       venue: 'ملعب النجوم الفرعي 1',
-      matchDate: new Date('2026-03-06T20:00:00Z'),
+      matchDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
     },
   });
+  await prisma.goal.create({ data: { matchId: b1.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 28, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b1.id, playerId: najd.players[4].id, teamId: najd.team.id, minute: 55, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b1.id, playerId: suqoor.players[3].id, teamId: suqoor.team.id, minute: 82, type: 'normal' } });
 
-  await prisma.goal.create({
+  // مباراة 2: أمل المروج 0 - 0 فرسان الملز (منتهية)
+  await prisma.match.create({
     data: {
-      matchId: matchB1.id,
-      playerId: groupBData[0].players[4].id, // مهاجم الأبطال
-      teamId: groupBData[0].team.id,
-      minute: 24,
-      type: 'normal',
-    },
-  });
-
-  await prisma.goal.create({
-    data: {
-      matchId: matchB1.id,
-      playerId: groupBData[0].players[3].id, // وسط الأبطال
-      teamId: groupBData[0].team.id,
-      minute: 68,
-      type: 'free_kick',
-    },
-  });
-
-  const goalB1_3 = await prisma.goal.create({
-    data: {
-      matchId: matchB1.id,
-      playerId: groupBData[1].players[4].id, // مهاجم الرياح (رقم 9)
-      teamId: groupBData[1].team.id,
-      minute: 39,
-      type: 'normal',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    },
-  });
-
-  await prisma.goal.create({
-    data: {
-      matchId: matchB1.id,
-      playerId: groupBData[1].players[3].id, // وسط الرياح
-      teamId: groupBData[1].team.id,
-      minute: 82,
-      type: 'normal',
-    },
-  });
-
-  // مباراة 6: البرق ضد الثعالب (منتهية: 1 - 0)
-  const matchB2 = await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupBData[2].team.id, // البرق
-      awayTeamId: groupBData[3].team.id, // الثعالب
-      homeScore: 1,
+      tournamentId: activeLeague.id,
+      homeTeamId: murooj.team.id,
+      awayTeamId: malaz.team.id,
+      homeScore: 0,
       awayScore: 0,
       status: 'finished',
       stage: 'group',
       groupName: 'B',
       venue: 'ملعب النجوم الفرعي 2',
-      matchDate: new Date('2026-03-06T22:00:00Z'),
+      matchDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
     },
   });
 
-  await prisma.goal.create({
+  // مباراة 3: صقور العاصمة 3 - 1 أمل المروج (منتهية)
+  const b3 = await prisma.match.create({
     data: {
-      matchId: matchB2.id,
-      playerId: groupBData[2].players[4].id, // مهاجم البرق
-      teamId: groupBData[2].team.id,
-      minute: 50,
-      type: 'normal',
-    },
-  });
-
-  // مباراتان مجدولتان للمجموعة B
-  const dayAfterTomorrow = new Date();
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-  dayAfterTomorrow.setHours(20, 0, 0, 0);
-
-  await prisma.match.create({
-    data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupBData[0].team.id,
-      awayTeamId: groupBData[2].team.id,
-      status: 'scheduled',
+      tournamentId: activeLeague.id,
+      homeTeamId: suqoor.team.id,
+      awayTeamId: murooj.team.id,
+      homeScore: 3,
+      awayScore: 1,
+      status: 'finished',
       stage: 'group',
       groupName: 'B',
       venue: 'ملعب النجوم الفرعي 1',
-      matchDate: dayAfterTomorrow,
+      matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
     },
   });
+  await prisma.goal.create({ data: { matchId: b3.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 12, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b3.id, playerId: murooj.players[4].id, teamId: murooj.team.id, minute: 37, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b3.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 59, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b3.id, playerId: suqoor.players[2].id, teamId: suqoor.team.id, minute: 74, type: 'normal' } });
 
-  const threeDaysLater = new Date();
-  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-  threeDaysLater.setHours(22, 0, 0, 0);
-
-  await prisma.match.create({
+  // مباراة 4: فهود نجد 2 - 1 فرسان الملز (منتهية)
+  const b4 = await prisma.match.create({
     data: {
-      tournamentId: activeTournament.id,
-      homeTeamId: groupBData[1].team.id,
-      awayTeamId: groupBData[3].team.id,
-      status: 'scheduled',
+      tournamentId: activeLeague.id,
+      homeTeamId: najd.team.id,
+      awayTeamId: malaz.team.id,
+      homeScore: 2,
+      awayScore: 1,
+      status: 'finished',
       stage: 'group',
       groupName: 'B',
       venue: 'ملعب النجوم الفرعي 2',
-      matchDate: threeDaysLater,
+      matchDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     },
   });
+  await prisma.goal.create({ data: { matchId: b4.id, playerId: najd.players[4].id, teamId: najd.team.id, minute: 30, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b4.id, playerId: malaz.players[4].id, teamId: malaz.team.id, minute: 61, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b4.id, playerId: najd.players[3].id, teamId: najd.team.id, minute: 88, type: 'normal' } });
 
-  // 8. تحديث عدادات أهداف اللاعبين يدوياً لتزامن الإحصائيات (الهدافين)
-  console.log('تحديث إحصائيات الهدافين...');
-  
-  // حساب عدد أهداف كل لاعب وتحديثه
-  const allPlayers = [
-    ...groupAData.flatMap(d => d.players),
-    ...groupBData.flatMap(d => d.players),
-  ];
+  // مباراة 5: فرسان الملز 0 - 2 صقور العاصمة (منتهية)
+  const b5 = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: malaz.team.id,
+      awayTeamId: suqoor.team.id,
+      homeScore: 0,
+      awayScore: 2,
+      status: 'finished',
+      stage: 'group',
+      groupName: 'B',
+      venue: 'ملعب النجوم الفرعي 1',
+      matchDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: b5.id, playerId: suqoor.players[4].id, teamId: suqoor.team.id, minute: 40, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b5.id, playerId: suqoor.players[3].id, teamId: suqoor.team.id, minute: 73, type: 'normal' } });
 
+  // مباراة 6: فهود نجد 1 - 1 أمل المروج (منتهية)
+  const b6 = await prisma.match.create({
+    data: {
+      tournamentId: activeLeague.id,
+      homeTeamId: najd.team.id,
+      awayTeamId: murooj.team.id,
+      homeScore: 1,
+      awayScore: 1,
+      status: 'finished',
+      stage: 'group',
+      groupName: 'B',
+      venue: 'ملعب النجوم الفرعي 2',
+      matchDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.goal.create({ data: { matchId: b6.id, playerId: najd.players[4].id, teamId: najd.team.id, minute: 22, type: 'normal' } });
+  await prisma.goal.create({ data: { matchId: b6.id, playerId: murooj.players[4].id, teamId: murooj.team.id, minute: 65, type: 'penalty' } });
+
+  // ─────────────────────────────────────────────────────────────
+  // 7. تحديث إحصائيات الهدافين بدقة
+  // ─────────────────────────────────────────────────────────────
+  console.log('📈 مزامنة إحصائيات هدافي البطولة...');
+  const allPlayers = teamsData.flatMap(t => t.players);
   for (const p of allPlayers) {
     const goalsCount = await prisma.goal.count({ where: { playerId: p.id } });
     if (goalsCount > 0) {
@@ -503,88 +651,91 @@ async function seed() {
     }
   }
 
-  // 9. إنشاء جولات التصويت (Voting Round) وتصويت لأهداف الجولة
-  console.log('إنشاء جولة التصويت النشطة وتوليد تصويتات...');
-  
-  const votingRound = await prisma.votingRound.create({
+  // ─────────────────────────────────────────────────────────────
+  // 8. جولات التصويت (أرشيفية مكتملة + حالية نشطة لا تنتهي)
+  // ─────────────────────────────────────────────────────────────
+  console.log('🗳️ إنشاء جولات التصويت والأصوات...');
+
+  // جولة 1: تصويت مكتمل ومؤرشف مع إعلان الفائز
+  const closedRound = await prisma.votingRound.create({
     data: {
-      title: 'تصويت أفضل هدف - الجولة الأولى',
-      description: 'صوّت لهدفك المفضل من بين أجمل أهداف مباريات الجولة الأولى في دوري نجوم الرياض 2026.',
+      title: 'أفضل هدف في ختام كأس 2025',
+      description: 'تصويت الجمهور لأجمل هدف في الأدوار النهائية لبطولة كأس نجوم الدوري 2025.',
+      status: 'closed',
+      tournamentId: pastCup.id,
+      startsAt: new Date('2025-11-06T12:00:00Z'),
+      endsAt: new Date('2025-11-12T23:59:00Z'),
+      closedAt: new Date('2025-11-13T00:00:00Z'),
+      winnerGoalId: finalGoal5.id, // هدف الحسم الدقيقة 89
+      showResultsMode: 'live',
+    },
+  });
+
+  const crGoal1 = await prisma.votingRoundGoal.create({
+    data: { roundId: closedRound.id, goalId: finalGoal1.id, sortOrder: 1, videoUrl: finalGoal1.videoUrl },
+  });
+  const crGoal2 = await prisma.votingRoundGoal.create({
+    data: { roundId: closedRound.id, goalId: finalGoal5.id, sortOrder: 2, videoUrl: finalGoal5.videoUrl },
+  });
+
+  // أصوات الجولة المؤرشفة
+  for (let i = 0; i < 48; i++) {
+    await prisma.goalVote.create({
+      data: { votingRoundGoalId: crGoal1.id, visitorIp: `10.0.1.${i}`, fingerprint: `closed-round-g1-${i}` },
+    }).catch(() => {});
+  }
+  for (let i = 0; i < 86; i++) {
+    await prisma.goalVote.create({
+      data: { votingRoundGoalId: crGoal2.id, visitorIp: `10.0.2.${i}`, fingerprint: `closed-round-g2-${i}` },
+    }).catch(() => {});
+  }
+
+  // جولة 2: تصويت الجولة الحالية في الدوري (نشطة بدون تاريخ انتهاء endsAt: null حتى لا تصبح قديمة)
+  const activeRound = await prisma.votingRound.create({
+    data: {
+      title: 'تصويت أفضل هدف - الجولة الحالية',
+      description: 'اختر هدفك المفضل من بين أروع أهداف الجولة وشارك في اختيار صاحب الهدف الأجمل!',
       status: 'active',
-      tournamentId: activeTournament.id,
-      startsAt: new Date(),
-      endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // بعد 7 أيام
+      tournamentId: activeLeague.id,
+      startsAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      endsAt: null, // لا تنتهي أبداً في نسخة العرض
+      showResultsMode: 'after_vote',
     },
   });
 
-  // ربط الأهداف المختارة بجولة التصويت
-  const vrGoal1 = await prisma.votingRoundGoal.create({
-    data: {
-      roundId: votingRound.id,
-      goalId: goalA1_2.id, // هدف مهاجم النسور (رقم 9) الدقيقة 42
-      sortOrder: 1,
-      videoUrl: goalA1_2.videoUrl,
-    },
+  const arGoal1 = await prisma.votingRoundGoal.create({
+    data: { roundId: activeRound.id, goalId: a1Goal2.id, sortOrder: 1, videoUrl: a1Goal2.videoUrl },
+  });
+  const arGoal2 = await prisma.votingRoundGoal.create({
+    data: { roundId: activeRound.id, goalId: a3Goal3.id, sortOrder: 2, videoUrl: a3Goal3.videoUrl },
+  });
+  const arGoal3 = await prisma.votingRoundGoal.create({
+    data: { roundId: activeRound.id, goalId: liveGoal3.id, sortOrder: 3, videoUrl: liveGoal3.videoUrl },
   });
 
-  const vrGoal2 = await prisma.votingRoundGoal.create({
-    data: {
-      roundId: votingRound.id,
-      goalId: goalA1_4.id, // هدف مهاجم الأسود (رقم 9) الدقيقة 88
-      sortOrder: 2,
-      videoUrl: goalA1_4.videoUrl,
-    },
-  });
-
-  const vrGoal3 = await prisma.votingRoundGoal.create({
-    data: {
-      roundId: votingRound.id,
-      goalId: goalB1_3.id, // هدف مهاجم الرياح (رقم 9) الدقيقة 39
-      sortOrder: 3,
-      videoUrl: goalB1_3.videoUrl,
-    },
-  });
-
-  // توليد أصوات تجريبية بنسب متباينة لعرض النتائج بوضوح
-  // الهدف الأول (vrGoal1): 45 صوت
-  for (let i = 0; i < 45; i++) {
+  // توليد أصوات تجريبية متباينة
+  for (let i = 0; i < 42; i++) {
     await prisma.goalVote.create({
-      data: {
-        votingRoundGoalId: vrGoal1.id,
-        visitorIp: `192.168.1.${i + 10}`,
-        fingerprint: `fingerprint-seed-vr1-goal1-${i}`,
-      },
+      data: { votingRoundGoalId: arGoal1.id, visitorIp: `192.168.10.${i}`, fingerprint: `active-round-g1-${i}` },
+    }).catch(() => {});
+  }
+  for (let i = 0; i < 28; i++) {
+    await prisma.goalVote.create({
+      data: { votingRoundGoalId: arGoal2.id, visitorIp: `192.168.20.${i}`, fingerprint: `active-round-g2-${i}` },
+    }).catch(() => {});
+  }
+  for (let i = 0; i < 16; i++) {
+    await prisma.goalVote.create({
+      data: { votingRoundGoalId: arGoal3.id, visitorIp: `192.168.30.${i}`, fingerprint: `active-round-g3-${i}` },
     }).catch(() => {});
   }
 
-  // الهدف الثاني (vrGoal2): 30 صوت
-  for (let i = 0; i < 30; i++) {
-    await prisma.goalVote.create({
-      data: {
-        votingRoundGoalId: vrGoal2.id,
-        visitorIp: `192.168.2.${i + 10}`,
-        fingerprint: `fingerprint-seed-vr1-goal2-${i}`,
-      },
-    }).catch(() => {});
-  }
-
-  // الهدف الثالث (vrGoal3): 15 صوت
-  for (let i = 0; i < 15; i++) {
-    await prisma.goalVote.create({
-      data: {
-        votingRoundGoalId: vrGoal3.id,
-        visitorIp: `192.168.3.${i + 10}`,
-        fingerprint: `fingerprint-seed-vr1-goal3-${i}`,
-      },
-    }).catch(() => {});
-  }
-
-  console.log('تم إدخال كافة البيانات التجريبية بنجاح!');
+  console.log('🎉 اكتملت تغذية قاعدة البيانات بنجاح تام وبأعلى معايير الواقعية!');
 }
 
 main()
   .catch((error) => {
-    console.error('فشلت عملية تغذية قاعدة البيانات:', error);
+    console.error('❌ فشل في تغذية قاعدة البيانات:', error);
     process.exit(1);
   })
   .finally(async () => {

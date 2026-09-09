@@ -81,3 +81,35 @@ export async function logout() {
   await clearAuthCookie();
   redirect('/admin-login');
 }
+
+// ─── الدخول السريع كمسؤول في وضع الديمو (Demo Login Server Action) ────────────
+export async function demoLogin() {
+  if (process.env.DEMO_MODE !== 'true') {
+    return { error: 'وضع الديمو غير مفعّل' };
+  }
+
+  try {
+    const adminUser = await prisma.user.findFirst({
+      where: { role: 'admin' },
+    });
+
+    if (!adminUser) {
+      return { error: 'لم يتم العثور على حساب مشرف في قاعدة البيانات' };
+    }
+
+    const token = await signToken({
+      userId: adminUser.id,
+      username: adminUser.username,
+      role: adminUser.role,
+    });
+
+    await setAuthCookie(token);
+  } catch (error) {
+    console.error('Demo login error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { error: `فشل الدخول التجريبي: ${errorMessage}` };
+  }
+
+  redirect('/admin');
+}
+
