@@ -33,7 +33,7 @@ import './globals.css';
 import { DesktopNav, MobileNav } from './components/Navigation';
 import NavVisibilityWrapper from './components/NavVisibilityWrapper';
 import PreviewBar from './components/PreviewBar';
-import DemoBanner from './components/DemoBanner';
+import DemoBanner, { HeaderDemoButton } from './components/DemoBanner';
 
 const elMessiri = El_Messiri({
   subsets: ['arabic'],
@@ -139,8 +139,13 @@ export default async function RootLayout({
                   </div>
                 </Link>
 
-                {/* ناف desktop */}
-                <DesktopNav />
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* ناف desktop */}
+                  <DesktopNav />
+
+                  {/* زر الدخول كمسؤول في الهيدر */}
+                  <HeaderDemoButton />
+                </div>
 
               </div>
             </header>

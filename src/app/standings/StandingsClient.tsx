@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Trophy, Star, Shield, X, Search } from "lucide-react";
-import type { StandingsData, TeamStanding, TeamWithPlayers } from "./page";
+import type { StandingsData, TeamStanding, TeamWithPlayers, TournamentData } from "./page";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -42,20 +43,17 @@ function getPositionColor(pos: string | null) {
   }
 }
 
-
 function cleanPlayerName(playerName: string) {
   if (!playerName) return "";
   return playerName.split(" - ")[0];
 }
-
 
 // ─── TeamAvatar ───────────────────────────────────────────────────────────────
 
 function TeamAvatar({ name, logoUrl, size = "md" }: { name: string; logoUrl: string | null; size?: "sm" | "md" | "lg" }) {
   const dim = size === "sm" ? 28 : size === "lg" ? 64 : 40;
   const textSize = size === "sm" ? "text-[10px]" : size === "lg" ? "text-lg" : "text-xs";
-  
-  // Check if logoUrl is a valid image path/URL to prevent rendering text placeholders like "1"
+
   const hasValidLogo = logoUrl && (logoUrl.startsWith("/") || logoUrl.startsWith("http") || logoUrl.includes("."));
 
   return (
@@ -87,7 +85,6 @@ function TeamAvatar({ name, logoUrl, size = "md" }: { name: string; logoUrl: str
   );
 }
 
-
 // ─── Tab Button ───────────────────────────────────────────────────────────────
 
 function TabButton({ id, active, onClick, icon: Icon, label }: { id: string; active: boolean; onClick: () => void; icon: React.ElementType; label: string }) {
@@ -111,13 +108,33 @@ function TabButton({ id, active, onClick, icon: Icon, label }: { id: string; act
 
 const STAGE_ORDER = ["round_32", "round_16", "quarter", "semi", "final"];
 
-function StandingsTab({ data }: { data: StandingsData }) {
-  const groups = Object.keys(data.standings).sort();
-  const hasKnockout = data.knockoutMatches.length > 0;
+function StandingsTab({
+  tournaments,
+  selectedTournamentId,
+  onSelectTournament,
+}: {
+  tournaments: TournamentData[];
+  selectedTournamentId: string;
+  onSelectTournament: (id: string) => void;
+}) {
+  const currentTournament =
+    tournaments.find((t) => t.id === selectedTournamentId) || tournaments[0];
+
+  if (!currentTournament) {
+    return (
+      <div className="glass-card rounded-2xl p-10 text-center">
+        <div className="text-3xl mb-3">🏟️</div>
+        <p className="text-white/50 font-semibold text-sm">لا توجد بيانات بطولات حالياً</p>
+      </div>
+    );
+  }
+
+  const groups = Object.keys(currentTournament.standings).sort();
+  const hasKnockout = currentTournament.knockoutMatches.length > 0;
 
   // Group knockout matches by stage in correct order
-  const knockoutByStage: Record<string, typeof data.knockoutMatches> = {};
-  for (const m of data.knockoutMatches) {
+  const knockoutByStage: Record<string, typeof currentTournament.knockoutMatches> = {};
+  for (const m of currentTournament.knockoutMatches) {
     if (!knockoutByStage[m.stage]) knockoutByStage[m.stage] = [];
     knockoutByStage[m.stage].push(m);
   }
@@ -126,6 +143,72 @@ function StandingsTab({ data }: { data: StandingsData }) {
 
   return (
     <div className="space-y-6">
+      {/* ── Tournament Switcher ── */}
+      {tournaments.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+          {tournaments.map((t) => {
+            const isSelected = t.id === currentTournament.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onSelectTournament(t.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                  isSelected
+                    ? "bg-gradient-to-r from-[#C9971A]/25 via-[#F0C040]/15 to-[#C9971A]/20 border border-[#C9971A]/60 text-[#F0C040] shadow-[0_0_20px_rgba(201,151,26,0.25)]"
+                    : "bg-white/[0.03] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                {t.status === "active" ? (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                ) : (
+                  <Trophy className="w-3.5 h-3.5 text-[#F0C040]" />
+                )}
+                <span>{t.name}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                    t.status === "active"
+                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                      : "bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/30"
+                  }`}
+                >
+                  {t.status === "active" ? "البطولة الحالية" : "منتهية"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Champion Showcase (if completed and has champion) ── */}
+      {currentTournament.champion && (
+        <div className="relative overflow-hidden rounded-2xl p-5 border border-[#C9971A]/40 bg-gradient-to-r from-[#1c1308]/90 via-[#2d1b06]/80 to-[#180a0c]/90 shadow-[0_0_30px_rgba(201,151,26,0.15)] animate-fade-in-up">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-center sm:text-right">
+              <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-b from-[#C9971A]/30 to-[#F0C040]/10 border border-[#C9971A]/50 shadow-[0_0_20px_rgba(201,151,26,0.3)] shrink-0">
+                <Trophy className="w-8 h-8 text-[#F0C040]" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-[#F0C040] uppercase tracking-wider">
+                  البطل المتوج باللقب 🏆
+                </div>
+                <div className="text-lg sm:text-xl font-black text-white mt-0.5">
+                  {currentTournament.champion.name}
+                </div>
+                {currentTournament.champion.runnerUpName && (
+                  <div className="text-xs text-white/60 mt-0.5">
+                    فاز في النهائي على {currentTournament.champion.runnerUpName} بنتيجة {currentTournament.champion.score}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-[#C9971A]/15 border border-[#C9971A]/30 text-xs font-bold text-[#F0C040]">
+              نسخة {currentTournament.name}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Group Stage ── */}
       {groups.length > 0 && (
         <div>
@@ -164,14 +247,14 @@ function StandingsTab({ data }: { data: StandingsData }) {
                 </div>
 
                 {/* Rows */}
-                {data.standings[group].map((row, idx) => {
+                {currentTournament.standings[group].map((row, idx) => {
                   const isTop2 = idx < 2;
                   return (
                     <div
                       key={row.teamId}
                       className="grid grid-cols-[1fr_34px_38px_40px] items-center px-3 py-2.5 md:grid-cols-[1fr_28px_28px_28px_28px_36px_36px_28px_36px]"
                       style={{
-                        borderBottom: idx < data.standings[group].length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                        borderBottom: idx < currentTournament.standings[group].length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                         background: isTop2 ? "rgba(201,151,26,0.04)" : "transparent",
                       }}
                     >
@@ -336,14 +419,14 @@ function StandingsTab({ data }: { data: StandingsData }) {
       {groups.length === 0 && !hasKnockout && (
         <div className="glass-card rounded-2xl p-10 text-center">
           <div className="text-3xl mb-3">🏟️</div>
-          <p className="text-white/50 font-semibold text-sm">لا توجد بيانات ترتيب بعد</p>
+          <p className="text-white/50 font-semibold text-sm">لا توجد بيانات لهذه البطولة بعد</p>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Tab 2: Teams & Squads ────────────────────────────────────────────────────
+// ─── Tab 2: Teams & Players ───────────────────────────────────────────────────
 
 interface TeamsTabProps {
   teams: TeamWithPlayers[];
@@ -497,7 +580,7 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
               <X className="w-4 h-4" />
             </button>
 
-            {/* Modal Header: Focused on Squad list without redundant giant team name */}
+            {/* Modal Header */}
             <div
               className="px-6 py-6 flex flex-col items-center text-center relative"
               style={{
@@ -507,10 +590,8 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
             >
               <TeamAvatar name={activeTeam.name} logoUrl={activeTeam.logoUrl} size="lg" />
               
-              {/* Squad Title */}
               <h3 className="text-sm font-black text-white/90 mt-3.5">التشكيلة الرسمية للاعبين</h3>
               
-              {/* Integrated Subtitle showing Team and Group */}
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[10px] font-black text-[#F0C040] bg-[#C9971A]/10 px-2 py-0.5 rounded-lg border border-[#C9971A]/20">
                   {activeTeam.name}
@@ -535,7 +616,6 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                 </div>
               ) : (
                 <>
-                  {/* Table Column Headers */}
                   <div
                     className="px-3 py-2 grid text-[9px] font-black text-white/25 tracking-widest uppercase items-center"
                     style={{ gridTemplateColumns: "36px 1fr 60px 80px" }}
@@ -546,7 +626,6 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                     <span className="text-left pl-2">المركز</span>
                   </div>
 
-                  {/* Player Rows */}
                   {activeTeam.players.map((player: TeamWithPlayers["players"][number], idx: number) => (
                     <div
                       key={player.id}
@@ -556,7 +635,6 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                         borderBottom: idx < activeTeam.players.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
                       }}
                     >
-                      {/* Jersey Number */}
                       <div className="flex justify-center">
                         <div
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black score-number"
@@ -570,10 +648,8 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                         </div>
                       </div>
 
-                      {/* Name */}
                       <span className="text-xs font-bold text-white/85 pr-2 truncate">{cleanPlayerName(player.name)}</span>
 
-                      {/* Goals Count Column */}
                       <div className="flex justify-center">
                         {(player.goalsCount ?? 0) > 0 ? (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-[10px] font-black text-green-400 score-number">
@@ -584,7 +660,6 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
                         )}
                       </div>
 
-                      {/* Position */}
                       <div className="flex justify-end">
                         {player.position ? (
                           <span
@@ -613,7 +688,6 @@ function TeamsTab({ teams, standings }: TeamsTabProps) {
   );
 }
 
-
 // ─── Tab 3: Top Scorers ───────────────────────────────────────────────────────
 
 function TopScorersTab({ data }: { data: StandingsData }) {
@@ -636,7 +710,6 @@ function TopScorersTab({ data }: { data: StandingsData }) {
 
   return (
     <div className="space-y-5">
-      {/* Dynamic Podium for Top 3 */}
       {scorers.length >= 3 && (
         <div className="grid grid-cols-3 gap-2.5 items-end px-1.5 py-4 animate-fade-in-up relative">
           {[1, 0, 2].map((realIdx) => {
@@ -649,7 +722,6 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                 className={`flex flex-col items-center gap-2 rounded-2xl text-center relative transition-all duration-300 ${config.heightClass}`}
                 style={{ background: config.bg, borderColor: config.border }}
               >
-                {/* Crown glow for 1st place */}
                 {realIdx === 0 && (
                   <div className="absolute -top-4 w-10 h-10 bg-[#C9971A]/30 blur-xl rounded-full pointer-events-none" />
                 )}
@@ -682,7 +754,6 @@ function TopScorersTab({ data }: { data: StandingsData }) {
 
       {/* Scorers List */}
       <div className="glass-card rounded-2xl overflow-hidden animate-fade-in-up" style={{ animationDelay: "60ms" }}>
-        {/* Header */}
         <div className="grid grid-cols-[32px_1fr_48px] px-3 py-3 text-[9px] font-black text-white/25 tracking-widest uppercase items-center md:grid-cols-[36px_1fr_140px_60px] md:px-4 [&>span:nth-child(3)]:hidden md:[&>span:nth-child(3)]:block">
           <span className="text-center">الترتيب</span>
           <span>اللاعب</span>
@@ -702,7 +773,6 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                 borderBottom: idx < scorers.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
               }}
             >
-              {/* Rank */}
               <div className="flex justify-center">
                 {isTop3 ? (
                   <span className="text-lg leading-none">{config.label}</span>
@@ -713,20 +783,17 @@ function TopScorersTab({ data }: { data: StandingsData }) {
                 )}
               </div>
 
-              {/* Player Name */}
               <div className="min-w-0 pr-2 [&>p:last-child]:hidden md:[&>p:last-child]:block">
                 <p className="text-xs font-bold text-white/90 truncate">{cleanPlayerName(scorer.playerName)}</p>
                 <p className="text-[10px] text-white/50 font-semibold mt-0.5 truncate md:hidden">{scorer.teamName}</p>
                 <p className="text-[10px] text-white/50 font-semibold mt-0.5">لاعب مسجل</p>
               </div>
 
-              {/* Team Info */}
               <div className="hidden items-center gap-2 min-w-0 md:flex">
                 <TeamAvatar name={scorer.teamName} logoUrl={scorer.logoUrl} size="sm" />
                 <span className="text-xs font-bold text-white/80 truncate">{scorer.teamName}</span>
               </div>
 
-              {/* Goals count */}
               <div className="flex items-center justify-center">
                 <span
                   className="text-sm font-black score-number px-2.5 py-1 rounded-lg"
@@ -752,7 +819,23 @@ function TopScorersTab({ data }: { data: StandingsData }) {
 type Tab = "standings" | "teams" | "scorers";
 
 export default function StandingsClient({ data }: { data: StandingsData }) {
+  const searchParams = useSearchParams();
+  const requestedTournamentId = searchParams.get("t");
+
   const [activeTab, setActiveTab] = useState<Tab>("standings");
+
+  // Default to query parameter if provided, otherwise active tournament, otherwise first
+  const defaultTournament =
+    data.tournaments.find((t) => t.id === requestedTournamentId) ||
+    data.tournaments.find((t) => t.status === "active") ||
+    data.tournaments[0];
+
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>(
+    defaultTournament?.id || ""
+  );
+
+  const selectedTournament =
+    data.tournaments.find((t) => t.id === selectedTournamentId) || defaultTournament;
 
   const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
     { id: "standings", icon: Trophy, label: "مسار البطولة" },
@@ -780,8 +863,19 @@ export default function StandingsClient({ data }: { data: StandingsData }) {
       </div>
 
       {/* ── Tab Content ── */}
-      {activeTab === "standings" && <StandingsTab data={data} />}
-      {activeTab === "teams" && <TeamsTab teams={data.teams} standings={data.standings} />}
+      {activeTab === "standings" && (
+        <StandingsTab
+          tournaments={data.tournaments}
+          selectedTournamentId={selectedTournamentId}
+          onSelectTournament={setSelectedTournamentId}
+        />
+      )}
+      {activeTab === "teams" && (
+        <TeamsTab
+          teams={data.teams}
+          standings={selectedTournament ? selectedTournament.standings : data.standings}
+        />
+      )}
       {activeTab === "scorers" && <TopScorersTab data={data} />}
     </div>
   );

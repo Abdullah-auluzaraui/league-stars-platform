@@ -9,22 +9,38 @@ export default function DemoBanner() {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setIsMounted(true);
-    const wasDismissed = sessionStorage.getItem('demo_banner_collapsed') === 'true';
-    if (wasDismissed) {
+    
+    // التحقق مما إذا كان المستخدم في وضع معاينة المشرف (PreviewBar) لمنع التصادم التام
+    const inPreview = 
+      sessionStorage.getItem('admin_preview') === 'true' ||
+      new URLSearchParams(window.location.search).get('preview') === 'true';
+    if (inPreview) {
+      setIsAdminPreview(true);
+    }
+
+    // التحقق مما إذا تم تصغير الشريط في هذه الجلسة
+    const wasCollapsed = sessionStorage.getItem('demo_banner_collapsed') === 'true';
+    if (wasCollapsed) {
       setCollapsed(true);
     }
   }, []);
 
-  // إخفاء الشريط بالكامل في لوحة التحكم وصفحة تسجيل الدخول
+  // 1. إخفاء تام في مسارات المشرف وتسجيل الدخول
   if (pathname?.startsWith('/admin')) {
     return null;
   }
 
-  // تفعيل وضع الديمو افتراضياً لنسخة العرض (إلا إذا تم تعطيله صراحة بـ false)
+  // 2. إخفاء تام إذا كان المشرف في وضع المعاينة (يمنع التصادم مع PreviewBar)
+  if (isAdminPreview) {
+    return null;
+  }
+
+  // 3. التحقق من تفعيل وضع الديمو
   if (process.env.NEXT_PUBLIC_DEMO_MODE === 'false') {
     return null;
   }
@@ -47,19 +63,19 @@ export default function DemoBanner() {
     });
   };
 
-  // الحالة المصغرة (Collapsed Pill)
+  // الحالة المصغرة (شارة أنيقة غير متداخلة إطلاقاً)
   if (collapsed) {
     return (
-      <div className="fixed bottom-20 md:bottom-6 left-4 md:left-6 z-[9990] animate-fade-in">
+      <div className="fixed bottom-20 md:bottom-6 left-3 md:left-6 z-40 animate-fade-in">
         <button
           onClick={handleExpand}
-          className="glass-card flex items-center gap-2 px-3 py-2 rounded-full border shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer text-xs font-bold text-[#F0C040]"
+          className="glass-card flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer text-[11px] font-bold text-[#F0C040]"
           style={{
             background: 'rgba(18, 14, 8, 0.92)',
             borderColor: 'rgba(201, 151, 26, 0.45)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 16px rgba(201,151,26,0.2)',
           }}
-          title="عرض شريط الديمو التجريبي"
+          title="عرض خيارات نسخة العرض (Demo)"
         >
           <Sparkles className="w-3.5 h-3.5 text-[#F0C040] animate-pulse" />
           <span>نسخة العرض (Demo)</span>
@@ -68,14 +84,14 @@ export default function DemoBanner() {
     );
   }
 
-  // الحالة الموسعة الكاملة (Full Banner Card)
+  // الحالة العادية (كرت فخم ومضغوط)
   return (
     <aside
       aria-label="إشعار نسخة العرض التجريبية"
-      className="fixed bottom-20 md:bottom-6 left-4 md:left-6 right-4 md:right-auto z-[9990] md:max-w-md animate-fade-in-up"
+      className="fixed bottom-20 md:bottom-6 left-3 md:left-6 right-3 md:right-auto z-40 md:max-w-md animate-fade-in-up"
     >
       <div
-        className="glass-card flex items-center justify-between gap-3.5 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl"
+        className="glass-card flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl border shadow-2xl backdrop-blur-xl"
         style={{
           background: 'rgba(18, 14, 8, 0.94)',
           borderColor: 'rgba(201, 151, 26, 0.45)',
@@ -83,31 +99,31 @@ export default function DemoBanner() {
         }}
         dir="rtl"
       >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-[#C9971A]/20 border border-[#C9971A]/40 flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4 text-[#F0C040] animate-pulse" />
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-xl bg-[#C9971A]/20 border border-[#C9971A]/40 flex items-center justify-center shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-[#F0C040] animate-pulse" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-black text-white">نسخة عرض تجريبية</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/30">
-                Demo
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/30">
+                Portfolio Demo
               </span>
             </div>
-            <p className="text-[11px] text-white/60 truncate mt-0.5">
-              بيانات واقعية لمحاكاة نظام إدارة بطولات متكامل
+            <p className="text-[10.5px] text-white/60 truncate mt-0.5">
+              نظام إدارة بطولات تفاعلي متكامل
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={handleDemoLogin}
             disabled={isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#C9971A] to-[#F0C040] hover:brightness-110 text-black font-black text-xs rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#C9971A] to-[#F0C040] hover:brightness-110 text-black font-black text-[11px] rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
               <ShieldCheck className="w-3.5 h-3.5" />
             )}
@@ -116,7 +132,7 @@ export default function DemoBanner() {
 
           <button
             onClick={handleCollapse}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             title="تصغير الشريط"
             aria-label="تصغير الشريط"
           >
@@ -125,5 +141,43 @@ export default function DemoBanner() {
         </div>
       </div>
     </aside>
+  );
+}
+
+// مكون زر الديمو في الهيدر (اختياري للوصول السريع بدون حجب الواجهة)
+export function HeaderDemoButton() {
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  if (pathname?.startsWith('/admin') || process.env.NEXT_PUBLIC_DEMO_MODE === 'false') {
+    return null;
+  }
+
+  const handleDemoLogin = () => {
+    startTransition(async () => {
+      await demoLogin();
+    });
+  };
+
+  return (
+    <button
+      onClick={handleDemoLogin}
+      disabled={isPending}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+      style={{
+        background: 'rgba(201, 151, 26, 0.12)',
+        borderColor: 'rgba(201, 151, 26, 0.35)',
+        color: '#F0C040',
+      }}
+      title="تجربة الدخول كمسؤول بنقرة واحدة"
+    >
+      {isPending ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : (
+        <Sparkles className="w-3 h-3 text-[#F0C040]" />
+      )}
+      <span className="hidden sm:inline">دخول المشرف (Demo)</span>
+      <span className="sm:hidden">Demo</span>
+    </button>
   );
 }

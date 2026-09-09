@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { MapPin, Clock, ChevronDown, ChevronUp, Zap, Calendar, Tv } from 'lucide-react';
-import type { MatchWithEvents } from './page';
+import { MapPin, Clock, ChevronDown, ChevronUp, Zap, Calendar, Tv, Trophy } from 'lucide-react';
+import type { MatchWithEvents, TournamentFilterItem } from './page';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -196,8 +197,14 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
             )}
           </div>
           <div className="flex min-w-0 items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-white/50 font-medium">
+            {match.tournament && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/[0.06] border border-white/[0.08] text-white/70">
+                {match.tournament.status === 'completed' && <span>🏆</span>}
+                <span className="truncate max-w-[120px] sm:max-w-none">{match.tournament.name}</span>
+              </span>
+            )}
             {match.groupName && <span>المجموعة {match.groupName}</span>}
-            {match.groupName && <span>·</span>}
+            {(match.groupName || match.tournament) && <span>·</span>}
             <span className="truncate">{getStageName(match.stage)}</span>
           </div>
         </div>
@@ -257,7 +264,7 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
           </div>
         </div>
 
-        {/* ── Venue + Date row ── */}
+        {/* ── Venue + Date row (Date only for finished matches, NOT live!) ── */}
         {(match.venue || isFinished) && (
           <div className="flex items-center justify-center gap-2.5 md:gap-3 mt-3 md:mt-4 text-[10px] md:text-xs text-white/50 font-medium">
             {match.venue && (
@@ -348,24 +355,20 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
                     />
                   </div>
                 ) : (
-                  <div className="p-4 bg-white/2 border border-white/5 rounded-xl text-center">
-                    <p className="text-xs text-white/60 mb-2 font-semibold">رابط البث غير مدعوم للمشاهدة المباشرة بداخل الصفحة.</p>
-                    <a
-                      href={match.streamUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-[#F0C040] hover:underline"
-                    >
-                      <span>الذهاب لرابط البث المباشر</span>
-                      <span>↗</span>
-                    </a>
-                  </div>
+                  <a
+                    href={match.streamUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-xs font-bold transition-all border border-red-500/30"
+                  >
+                    <Tv className="w-4 h-4" />
+                    فتح رابط البث في نافذة جديدة ↗
+                  </a>
                 )}
               </div>
             )}
           </div>
         )}
-
       </div>
     </div>
   );
@@ -375,8 +378,8 @@ function MatchCard({ match, index }: { match: MatchWithEvents; index: number }) 
 
 function EmptyState({ filter }: { filter: FilterStatus }) {
   const messages: Record<FilterStatus, string> = {
-    all: 'لا توجد مباريات مسجلة بعد',
-    live: 'لا توجد مباريات تُلعب الآن',
+    all: 'لا توجد مباريات مسجلة',
+    live: 'لا توجد مباريات مباشرة الآن',
     scheduled: 'لا توجد مباريات قادمة',
     finished: 'لا توجد مباريات منتهية',
   };
@@ -390,25 +393,41 @@ function EmptyState({ filter }: { filter: FilterStatus }) {
 
 // ─── Main Client Component ────────────────────────────────────────────────────
 
-export default function MatchesClient({ matches }: { matches: MatchWithEvents[] }) {
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
+export default function MatchesClient({
+  matches,
+  tournaments = [],
+}: {
+  matches: MatchWithEvents[];
+  tournaments?: TournamentFilterItem[];
+}) {
+  const searchParams = useSearchParams();
+  const requestedTournamentId = searchParams.get('t');
 
-  // Derive unique groups for a potential group filter
+  const [activeTournamentId, setActiveTournamentId] = useState<string>(
+    requestedTournamentId || 'all'
+  );
+  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
+  const [activeGroup, setActiveGroup] = useState<string>('all');
+
+  // Derive unique groups from matches matching the active tournament
   const groups = useMemo(() => {
     const g = new Set<string>();
-    matches.forEach((m) => { if (m.groupName) g.add(m.groupName); });
+    matches
+      .filter((m) => activeTournamentId === 'all' || m.tournamentId === activeTournamentId)
+      .forEach((m) => {
+        if (m.groupName) g.add(m.groupName);
+      });
     return [...g].sort();
-  }, [matches]);
-
-  const [activeGroup, setActiveGroup] = useState<string>('all');
+  }, [matches, activeTournamentId]);
 
   const filtered = useMemo(() => {
     return matches.filter((m) => {
+      const tournamentMatch = activeTournamentId === 'all' || m.tournamentId === activeTournamentId;
       const statusMatch = activeFilter === 'all' || m.status === activeFilter;
       const groupMatch = activeGroup === 'all' || m.groupName === activeGroup;
-      return statusMatch && groupMatch;
+      return tournamentMatch && statusMatch && groupMatch;
     });
-  }, [matches, activeFilter, activeGroup]);
+  }, [matches, activeTournamentId, activeFilter, activeGroup]);
 
   // Sort: live first, then scheduled, then finished
   const sorted = useMemo(() => {
@@ -422,13 +441,18 @@ export default function MatchesClient({ matches }: { matches: MatchWithEvents[] 
     });
   }, [filtered]);
 
-  // Counts for filter badges
-  const counts = useMemo(() => ({
-    all: matches.length,
-    live: matches.filter((m) => m.status === 'live').length,
-    scheduled: matches.filter((m) => m.status === 'scheduled').length,
-    finished: matches.filter((m) => m.status === 'finished').length,
-  }), [matches]);
+  // Counts for filter badges within selected tournament
+  const counts = useMemo(() => {
+    const scoped = matches.filter(
+      (m) => activeTournamentId === 'all' || m.tournamentId === activeTournamentId
+    );
+    return {
+      all: scoped.length,
+      live: scoped.filter((m) => m.status === 'live').length,
+      scheduled: scoped.filter((m) => m.status === 'scheduled').length,
+      finished: scoped.filter((m) => m.status === 'finished').length,
+    };
+  }, [matches, activeTournamentId]);
 
   const nextScheduled = useMemo(() => {
     return matches
@@ -473,7 +497,61 @@ export default function MatchesClient({ matches }: { matches: MatchWithEvents[] 
         </div>
       </div>
 
-      {/* ── Filters Section (Desktop: Row / Mobile: Column) ── */}
+      {/* ── Tournament Selector Pills (Top Level Filter) ── */}
+      {tournaments && tournaments.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 animate-fade-in-up custom-scrollbar">
+          <button
+            onClick={() => {
+              setActiveTournamentId('all');
+              setActiveGroup('all');
+            }}
+            className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              activeTournamentId === 'all'
+                ? 'bg-white/15 text-white border border-white/25 shadow-sm'
+                : 'text-white/40 border border-white/[0.06] hover:text-white/70 hover:border-white/15 bg-white/[0.02]'
+            }`}
+          >
+            <span>جميع البطولات</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 font-black">
+              {matches.length}
+            </span>
+          </button>
+          {tournaments.map((t) => {
+            const isSelected = activeTournamentId === t.id;
+            const count = matches.filter((m) => m.tournamentId === t.id).length;
+            return (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setActiveTournamentId(t.id);
+                  setActiveGroup('all');
+                }}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#C9971A]/20 text-[#F0C040] border border-[#C9971A]/50 shadow-[0_0_15px_rgba(201,151,26,0.2)]'
+                    : 'text-white/40 border border-white/[0.06] hover:text-white/70 hover:border-white/15 bg-white/[0.02]'
+                }`}
+              >
+                {t.status === 'active' ? (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                ) : (
+                  <Trophy className="w-3.5 h-3.5 text-[#F0C040]" />
+                )}
+                <span>{t.name}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                    isSelected ? 'bg-[#C9971A]/25 text-[#F0C040]' : 'bg-white/5 text-white/40'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Status & Group Filters Section ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-4 md:mb-2 md:rounded-[24px] md:border md:border-white/[0.06] md:bg-black/15 md:p-3">
 
         {/* Status Filters */}

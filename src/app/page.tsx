@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ChevronLeft,
-  Star, Vote, Zap, Eye, Tv
+  Star, Vote, Zap, Eye, Tv, Trophy
 } from 'lucide-react';
 import HeroStats from './components/HeroStats';
 
@@ -14,9 +14,196 @@ export const revalidate = 0;
 
 async function getHomeData() {
   try {
+    const activeTournament = await prisma.tournament.findFirst({
+      where: { status: 'active' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true },
+    }).catch((error) => {
+      console.error('Failed to load active tournament', error);
+      return null;
+    });
+
     const [
       hero,
-      tournament,
+      liveMatches,
+      nextMatch,
+      lastFinishedMatch,
+      activeVoteGoal,
+      topScorers,
+      sponsors,
+      settingsList,
+      completedTournament,
+      goalsCount,
+      teamsCount,
+      matchesCount,
+      completedGoalsCount,
+    ] = await Promise.all([
+      prisma.content.findUnique({
+        where: { section: 'hero' },
+        select: { title: true, body: true },
+      }).catch((error) => {
+        console.error('Failed to load home hero content', error);
+        return null;
+      }),
+      prisma.match.findMany({
+        where: {
+          status: 'live',
+          ...(activeTournament ? { tournamentId: activeTournament.id } : {}),
+        },
+        select: {
+          id: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          matchDate: true,
+          venue: true,
+          streamUrl: true,
+          homeTeam: { select: { name: true, logoUrl: true } },
+          awayTeam: { select: { name: true, logoUrl: true } },
+        },
+        take: 3,
+      }).catch((error) => {
+        console.error('Failed to load live matches', error);
+        return [];
+      }),
+      prisma.match.findFirst({
+        where: {
+          status: 'scheduled',
+          ...(activeTournament ? { tournamentId: activeTournament.id } : {}),
+        },
+        select: {
+          id: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          matchDate: true,
+          venue: true,
+          streamUrl: true,
+          homeTeam: { select: { name: true, logoUrl: true } },
+          awayTeam: { select: { name: true, logoUrl: true } },
+        },
+        orderBy: { matchDate: 'asc' },
+      }).catch((error) => {
+        console.error('Failed to load next match', error);
+        return null;
+      }),
+      prisma.match.findFirst({
+        where: {
+          status: 'finished',
+          ...(activeTournament ? { tournamentId: activeTournament.id } : {}),
+        },
+        select: {
+          id: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          matchDate: true,
+          venue: true,
+          streamUrl: true,
+          homeTeam: { select: { name: true, logoUrl: true } },
+          awayTeam: { select: { name: true, logoUrl: true } },
+        },
+        orderBy: { matchDate: 'desc' },
+      }).catch((error) => {
+        console.error('Failed to load last finished match', error);
+        return null;
+      }),
+      prisma.votingRoundGoal.findFirst({
+        where: { round: { status: 'active' } },
+        select: {
+          goal: {
+            select: {
+              videoUrl: true,
+              minute: true,
+              type: true,
+              player: { select: { name: true } },
+              team: { select: { name: true } },
+            },
+          },
+        },
+      }).then((rg) => rg?.goal || null).catch((error) => {
+        console.error('Failed to load active vote goal', error);
+        return null;
+      }),
+      prisma.player.findMany({
+        where: { goalsCount: { gt: 0 } },
+        select: {
+          id: true,
+          name: true,
+          goalsCount: true,
+          team: { select: { name: true, logoUrl: true } },
+        },
+        orderBy: { goalsCount: 'desc' },
+        take: 5,
+      }).catch((error) => {
+        console.error('Failed to load top scorers', error);
+        return [];
+      }),
+      prisma.sponsor.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' },
+        select: { name: true, logoUrl: true, websiteUrl: true },
+      }).catch((error) => {
+        console.error('Failed to load sponsors', error);
+        return [];
+      }),
+      prisma.setting.findMany({
+        select: { key: true, value: true },
+      }).catch((error) => {
+        console.error('Failed to load home settings', error);
+        return [];
+      }),
+      prisma.tournament.findFirst({
+        where: { status: 'completed' },
+        orderBy: { endDate: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          startDate: true,
+          endDate: true,
+          matches: {
+            where: { stage: 'final' },
+            select: {
+              id: true,
+              homeScore: true,
+              awayScore: true,
+              homeTeam: { select: { id: true, name: true, logoUrl: true } },
+              awayTeam: { select: { id: true, name: true, logoUrl: true } },
+            },
+          },
+          _count: {
+            select: { matches: true, teams: true },
+          },
+        },
+      }).catch((error) => {
+        console.error('Failed to load completed tournament', error);
+        return null;
+      }),
+      // إحصائيات دقيقة خاصة بالبطولة الحالية النشطة
+      activeTournament
+        ? prisma.goal.count({ where: { match: { tournamentId: activeTournament.id } } })
+        : prisma.goal.count(),
+      activeTournament
+        ? prisma.tournamentTeam.count({ where: { tournamentId: activeTournament.id } })
+        : prisma.team.count({ where: { archivedAt: null } }),
+      activeTournament
+        ? prisma.match.count({ where: { tournamentId: activeTournament.id } })
+        : prisma.match.count(),
+      // عدد أهداف البطولة المكتملة
+      prisma.goal.count({ where: { match: { tournament: { status: 'completed' } } } }).catch(() => 0),
+    ]);
+
+    const settingsMap: Record<string, string> = {};
+    settingsList.forEach((s) => {
+      settingsMap[s.key] = s.value;
+    });
+
+    return {
+      hero,
+      tournament: activeTournament,
+      completedTournament,
+      completedGoalsCount,
       liveMatches,
       nextMatch,
       lastFinishedMatch,
@@ -26,149 +213,25 @@ async function getHomeData() {
       goalsCount,
       teamsCount,
       matchesCount,
-      settingsList,
-    ] =
-      await Promise.all([
-        prisma.content.findUnique({
-          where: { section: 'hero' },
-          select: { title: true, body: true },
-        }).catch((error) => {
-          console.error('Failed to load home hero content', error);
-          return null;
-        }),
-        prisma.tournament.findFirst({
-          where: { status: 'active' },
-          orderBy: { createdAt: 'desc' },
-          select: { name: true },
-        }).catch((error) => {
-          console.error('Failed to load active tournament', error);
-          return null;
-        }),
-        prisma.match.findMany({
-          where: { status: 'live' },
-          select: {
-            id: true,
-            status: true,
-            homeScore: true,
-            awayScore: true,
-            matchDate: true,
-            venue: true,
-            streamUrl: true,
-            homeTeam: { select: { name: true, logoUrl: true } },
-            awayTeam: { select: { name: true, logoUrl: true } },
-          },
-          take: 3,
-        }).catch((error) => {
-          console.error('Failed to load live matches', error);
-          return [];
-        }),
-        prisma.match.findFirst({
-          where: { status: 'scheduled' },
-          select: {
-            id: true,
-            status: true,
-            homeScore: true,
-            awayScore: true,
-            matchDate: true,
-            venue: true,
-            streamUrl: true,
-            homeTeam: { select: { name: true, logoUrl: true } },
-            awayTeam: { select: { name: true, logoUrl: true } },
-          },
-          orderBy: { matchDate: 'asc' },
-        }).catch((error) => {
-          console.error('Failed to load next match', error);
-          return null;
-        }),
-        prisma.match.findFirst({
-          where: { status: 'finished' },
-          select: {
-            id: true,
-            status: true,
-            homeScore: true,
-            awayScore: true,
-            matchDate: true,
-            venue: true,
-            streamUrl: true,
-            homeTeam: { select: { name: true, logoUrl: true } },
-            awayTeam: { select: { name: true, logoUrl: true } },
-          },
-          orderBy: { matchDate: 'desc' },
-        }).catch((error) => {
-          console.error('Failed to load last finished match', error);
-          return null;
-        }),
-        prisma.votingRoundGoal.findFirst({
-          where: { round: { status: 'active' } },
-          select: {
-            goal: {
-              select: {
-                videoUrl: true,
-                minute: true,
-                type: true,
-                player: { select: { name: true } },
-                team: { select: { name: true } },
-              },
-            },
-          },
-        }).then((rg) => rg?.goal || null).catch((error) => {
-          console.error('Failed to load active vote goal', error);
-          return null;
-        }),
-        prisma.player.findMany({
-          where: { goalsCount: { gt: 0 } },
-          select: {
-            id: true,
-            name: true,
-            goalsCount: true,
-            team: { select: { name: true, logoUrl: true } },
-          },
-          orderBy: { goalsCount: 'desc' },
-          take: 5,
-        }).catch((error) => {
-          console.error('Failed to load top scorers', error);
-          return [];
-        }),
-        prisma.sponsor.findMany({
-          where: { isActive: true },
-          orderBy: { displayOrder: 'asc' },
-          select: { name: true, logoUrl: true, websiteUrl: true },
-        }).catch((error) => {
-          console.error('Failed to load sponsors', error);
-          return [];
-        }),
-        prisma.goal.count().catch((error) => {
-          console.error('Failed to count goals', error);
-          return 0;
-        }),
-        prisma.team.count({ where: { archivedAt: null } }).catch((error) => {
-          console.error('Failed to count teams', error);
-          return 0;
-        }),
-        prisma.match.count().catch((error) => {
-          console.error('Failed to count matches', error);
-          return 0;
-        }),
-        prisma.setting.findMany({
-          select: { key: true, value: true },
-        }).catch((error) => {
-          console.error('Failed to load home settings', error);
-          return [];
-        }),
-      ]);
-
-    const settingsMap: Record<string, string> = {};
-    settingsList.forEach((s) => {
-      settingsMap[s.key] = s.value;
-    });
-
-    return { hero, tournament, liveMatches, nextMatch, lastFinishedMatch, activeVoteGoal, topScorers, sponsors, goalsCount, teamsCount, matchesCount, settingsMap };
+      settingsMap,
+    };
   } catch (error) {
     console.error('Failed to load home data', error);
     return {
-      hero: null, tournament: null, liveMatches: [], nextMatch: null,
-      lastFinishedMatch: null, activeVoteGoal: null, topScorers: [], sponsors: [],
-      goalsCount: 0, teamsCount: 0, matchesCount: 0, settingsMap: {},
+      hero: null,
+      tournament: null,
+      completedTournament: null,
+      completedGoalsCount: 0,
+      liveMatches: [],
+      nextMatch: null,
+      lastFinishedMatch: null,
+      activeVoteGoal: null,
+      topScorers: [],
+      sponsors: [],
+      goalsCount: 0,
+      teamsCount: 0,
+      matchesCount: 0,
+      settingsMap: {},
     };
   }
 }
@@ -479,6 +542,115 @@ function SponsorsSection({ sponsors }: { sponsors: { name: string; logoUrl: stri
   );
 }
 
+// ─── Hall of Champions Section (Completed Tournament Showcase) ──────────────
+
+type CompletedTournamentData = {
+  id: string;
+  name: string;
+  type: string;
+  startDate: Date | string;
+  endDate: Date | string | null;
+  matches: {
+    id: string;
+    homeScore: number | null;
+    awayScore: number | null;
+    homeTeam: { id: string; name: string; logoUrl: string | null };
+    awayTeam: { id: string; name: string; logoUrl: string | null };
+  }[];
+  _count: {
+    matches: number;
+    teams: number;
+  };
+};
+
+function HallOfChampionsSection({
+  tournament,
+  totalGoals,
+}: {
+  tournament: CompletedTournamentData;
+  totalGoals: number;
+}) {
+  const finalMatch = tournament.matches[0];
+  const homeScore = finalMatch?.homeScore ?? 0;
+  const awayScore = finalMatch?.awayScore ?? 0;
+  const winner = homeScore >= awayScore ? finalMatch?.homeTeam : finalMatch?.awayTeam;
+  const runnerUp = homeScore >= awayScore ? finalMatch?.awayTeam : finalMatch?.homeTeam;
+
+  return (
+    <section className="relative overflow-hidden rounded-3xl p-6 sm:p-8 md:p-10 border border-[#C9971A]/35 bg-gradient-to-br from-[#1c1308]/90 via-[#0e0705]/80 to-[#180a0c]/90 backdrop-blur-xl shadow-[0_0_40px_rgba(201,151,26,0.12)] animate-fade-in-up">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 right-1/4 w-72 h-72 bg-[#C9971A]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
+        {/* Left/Main Column: Trophy, Title & Winner Details */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-right gap-5">
+          {/* Trophy badge icon */}
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-b from-[#C9971A]/25 to-[#F0C040]/5 border-2 border-[#C9971A]/50 shadow-[0_0_25px_rgba(201,151,26,0.3)]">
+            <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-[#F0C040] drop-shadow-[0_2px_8px_rgba(201,151,26,0.8)]" />
+            <div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-[#C9971A] text-[10px] font-black text-black">
+              منتهية
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <span className="text-xs font-black text-[#F0C040] uppercase tracking-wider">
+                سجل الأبطال والبطولات السابقة
+              </span>
+              <span className="w-1 h-1 rounded-full bg-white/40" />
+              <span className="text-xs text-white/60">
+                {tournament.name}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center sm:justify-start gap-3">
+              <h3 className="text-2xl sm:text-3xl font-black text-white">
+                البطل: {winner ? winner.name : 'نجوم اليرموك'}
+              </h3>
+              <span className="text-xl">🏆</span>
+            </div>
+
+            {finalMatch && runnerUp && (
+              <p className="text-xs sm:text-sm text-white/70">
+                المباراة النهائية: فوز على <strong className="text-white font-bold">{runnerUp.name}</strong> بنتيجة{' '}
+                <span className="font-outfit font-black text-[#F0C040] inline-block px-2 py-0.5 rounded bg-white/10 mx-1">
+                  {homeScore} - {awayScore}
+                </span>
+              </p>
+            )}
+
+            {/* Quick stats pills */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/80">
+                {tournament._count.matches} مباريات ملعوبة
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/80">
+                {totalGoals} هدفاً مسجلاً
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/80">
+                {tournament._count.teams} فرق متنافسة
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: CTA button to view bracket / matches */}
+        <div className="shrink-0 w-full sm:w-auto">
+          <Link
+            href={`/standings?t=${tournament.id}`}
+            className="btn-trophy w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black shadow-lg hover:scale-105 transition-all"
+          >
+            <span>استعراض مسار البطولة والأدوار الإقصائية</span>
+            <ChevronLeft className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default async function HomePage() {
@@ -494,6 +666,8 @@ export default async function HomePage() {
   const sponsors = data.sponsors;
   const votingEnabled = data.settingsMap['voting_enabled'] !== 'false';
   const voteGoal = votingEnabled ? data.activeVoteGoal : null;
+  const completedTournament = data.completedTournament as CompletedTournamentData | null;
+  const completedGoalsCount = data.completedGoalsCount;
 
   const allMatches: MatchData[] = [
     ...liveMatches,
@@ -690,7 +864,18 @@ export default async function HomePage() {
       </div>{/* end grid */}
 
 
-      {/* ══ SECTION 3: SPONSORS (Full-Width, Bottom) ═════════════════════════ */}
+      {/* ══ SECTION 3: HALL OF CHAMPIONS (Full-Width Showcase) ══════════════ */}
+      {completedTournament && (
+        <div className="max-w-5xl mx-auto pt-2 px-1 sm:px-0">
+          <HallOfChampionsSection
+            tournament={completedTournament}
+            totalGoals={completedGoalsCount}
+          />
+        </div>
+      )}
+
+
+      {/* ══ SECTION 4: SPONSORS (Full-Width, Bottom) ═════════════════════════ */}
       <div className="max-w-5xl mx-auto pt-2 md:pt-4 pb-20 md:pb-10">
         <SponsorsSection sponsors={sponsors} />
       </div>
