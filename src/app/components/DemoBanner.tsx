@@ -24,8 +24,8 @@ export default function DemoBanner() {
     return null;
   }
 
-  // التحقق من تفعيل وضع الديمو
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') {
+  // تفعيل وضع الديمو افتراضياً لنسخة العرض (إلا إذا تم تعطيله صراحة بـ false)
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'false') {
     return null;
   }
 

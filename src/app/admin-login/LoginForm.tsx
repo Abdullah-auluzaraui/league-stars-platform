@@ -142,7 +142,7 @@ export default function LoginForm() {
         </form>
 
         {/* زر الدخول السريع في وضع الديمو */}
-        {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+        {process.env.NEXT_PUBLIC_DEMO_MODE !== 'false' && (
           <div className="mt-5 pt-5 border-t border-white/10">
             <button
               type="button"

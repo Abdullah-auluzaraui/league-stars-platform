@@ -84,8 +84,8 @@ export async function logout() {
 
 // ─── الدخول السريع كمسؤول في وضع الديمو (Demo Login Server Action) ────────────
 export async function demoLogin() {
-  if (process.env.DEMO_MODE !== 'true') {
-    return { error: 'وضع الديمو غير مفعّل' };
+  if (process.env.DEMO_MODE === 'false') {
+    return { error: 'وضع الديمو معطّل' };
   }
 
   try {
