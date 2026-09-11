@@ -79,6 +79,11 @@ export async function login(prevState: any, formData: FormData) {
 // ─── تسجيل الخروج (Logout Server Action) ──────────────────────────────────────
 export async function logout() {
   await clearAuthCookie();
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    cookieStore.delete('admin_preview');
+  } catch {}
   redirect('/admin-login');
 }
 

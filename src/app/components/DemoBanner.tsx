@@ -4,25 +4,15 @@ import { useState, useEffect, useTransition } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sparkles, ShieldCheck, X, Loader2 } from 'lucide-react';
 import { demoLogin } from '@/app/admin-login/actions';
+import { useAdminPreview } from './useAdminPreview';
 
 export default function DemoBanner() {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { isPreview, isAdminAuth, isMounted } = useAdminPreview();
 
   useEffect(() => {
-    setIsMounted(true);
-    
-    // التحقق مما إذا كان المستخدم في وضع معاينة المشرف (PreviewBar) لمنع التصادم التام
-    const inPreview = 
-      sessionStorage.getItem('admin_preview') === 'true' ||
-      new URLSearchParams(window.location.search).get('preview') === 'true';
-    if (inPreview) {
-      setIsAdminPreview(true);
-    }
-
     // التحقق مما إذا تم تصغير الشريط في هذه الجلسة
     const wasCollapsed = sessionStorage.getItem('demo_banner_collapsed') === 'true';
     if (wasCollapsed) {
@@ -30,22 +20,17 @@ export default function DemoBanner() {
     }
   }, []);
 
-  // 1. إخفاء تام في مسارات المشرف وتسجيل الدخول
-  if (pathname?.startsWith('/admin')) {
+  // إخفاء تام في مسارات المشرف، أو في وضع معاينة المشرف، أو إذا كان مسجلاً كمسؤول بالفعل
+  if (
+    !isMounted ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/admin-login') ||
+    isPreview ||
+    isAdminAuth ||
+    process.env.NEXT_PUBLIC_DEMO_MODE === 'false'
+  ) {
     return null;
   }
-
-  // 2. إخفاء تام إذا كان المشرف في وضع المعاينة (يمنع التصادم مع PreviewBar)
-  if (isAdminPreview) {
-    return null;
-  }
-
-  // 3. التحقق من تفعيل وضع الديمو
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'false') {
-    return null;
-  }
-
-  if (!isMounted) return null;
 
   const handleCollapse = () => {
     sessionStorage.setItem('demo_banner_collapsed', 'true');
@@ -148,8 +133,17 @@ export default function DemoBanner() {
 export function HeaderDemoButton() {
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const { isPreview, isAdminAuth, isMounted } = useAdminPreview();
 
-  if (pathname?.startsWith('/admin') || process.env.NEXT_PUBLIC_DEMO_MODE === 'false') {
+  // إخفاء تام في مسارات المشرف، أو في وضع معاينة المشرف، أو إذا كان مسجلاً كمسؤول بالفعل
+  if (
+    !isMounted ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/admin-login') ||
+    isPreview ||
+    isAdminAuth ||
+    process.env.NEXT_PUBLIC_DEMO_MODE === 'false'
+  ) {
     return null;
   }
 

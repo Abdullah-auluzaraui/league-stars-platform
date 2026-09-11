@@ -1640,6 +1640,10 @@ export default function AdminClient({ username }: { username: string }) {
       <div className="pt-4 border-t border-white/6 mt-auto">
         <button
           onClick={async () => {
+            document.cookie = 'admin_preview=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+            try {
+              sessionStorage.removeItem('admin_preview');
+            } catch {}
             await logout();
           }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white/55 hover:text-red-400 hover:bg-red-500/8 transition-all duration-200 cursor-pointer"
@@ -1727,7 +1731,10 @@ export default function AdminClient({ username }: { username: string }) {
 
             <button
               onClick={() => {
-                sessionStorage.setItem('admin_preview', 'true');
+                document.cookie = 'admin_preview=true; path=/; max-age=86400; SameSite=Lax';
+                try {
+                  sessionStorage.setItem('admin_preview', 'true');
+                } catch {}
                 window.location.href = '/?preview=true';
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#F0C040] bg-[#C9971A]/10 border border-[#C9971A]/20 hover:bg-[#C9971A]/25 hover:text-white transition-all duration-200 cursor-pointer"
