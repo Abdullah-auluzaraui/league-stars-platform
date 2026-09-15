@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Safe configuration template
+!.env.example
+
+# Local tooling and experiments
+/.agents/
+/AGENTS.md
+/CLAUDE.md
+/skills-lock.json
+/scratch/
+
+# User uploads must not be committed
+/public/uploads/

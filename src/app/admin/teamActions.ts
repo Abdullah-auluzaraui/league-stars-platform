@@ -315,7 +315,7 @@ export async function archiveTeam(teamId: string) {
   try {
     await verifyAdmin();
 
-    if (process.env.DEMO_MODE !== 'false') {
+    if (process.env.DEMO_MODE === 'true' && process.env.DEMO_DATABASE === 'true') {
       const team = await prisma.team.findUnique({ where: { id: teamId }, select: { name: true } });
       if (team && CORE_TEAM_NAMES.includes(team.name)) {
         return {
@@ -359,7 +359,7 @@ export async function deleteTeam(teamId: string) {
   try {
     await verifyAdmin();
 
-    if (process.env.DEMO_MODE !== 'false') {
+    if (process.env.DEMO_MODE === 'true' && process.env.DEMO_DATABASE === 'true') {
       const team = await prisma.team.findUnique({ where: { id: teamId }, select: { name: true } });
       if (team && CORE_TEAM_NAMES.includes(team.name)) {
         return {

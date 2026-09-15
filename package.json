@@ -7,7 +7,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node --experimental-strip-types prisma/seed.ts"
+    "seed": "node --experimental-strip-types prisma/seed.ts",
+    "admin:bootstrap": "node --experimental-strip-types prisma/admin.ts",
+    "test:security": "node --test tests/security.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -16,7 +18,7 @@
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.21.0",
-    "next": "16.2.9",
+    "next": "16.3.5",
     "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -29,11 +31,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5",
-    "dotenv": "^16.4.7"
+    "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.1"
   }
 }

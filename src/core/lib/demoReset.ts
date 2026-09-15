@@ -1,3 +1,4 @@
+import { assertDemoEnabled, DEMO_ADMIN_USERNAME } from './demo';
 import { prisma } from '@/core/lib/prisma';
 import bcrypt from 'bcryptjs';
 
@@ -17,6 +18,7 @@ function getRandomName(seedIndex: number): string {
 }
 
 export async function executeDemoReset(): Promise<{ success: boolean; message: string }> {
+  assertDemoEnabled();
   try {
     // 1. تنظيف قاعدة البيانات
     await prisma.goalVote.deleteMany({});
@@ -36,10 +38,10 @@ export async function executeDemoReset(): Promise<{ success: boolean; message: s
     // 2. حساب المشرف
     const passwordHash = await bcrypt.hash('demo123456', 10);
     await prisma.user.upsert({
-      where: { username: 'admin' },
+      where: { username: DEMO_ADMIN_USERNAME },
       update: { passwordHash, role: 'admin' },
       create: {
-        username: 'admin',
+        username: DEMO_ADMIN_USERNAME,
         passwordHash,
         role: 'admin',
       },
@@ -89,27 +91,27 @@ export async function executeDemoReset(): Promise<{ success: boolean; message: s
     // 4. الرعاة الرسميون
     const sponsors = [
       {
-        name: 'روشن العقارية',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=ROSHN&backgroundColor=991b1b',
-        websiteUrl: 'https://www.roshn.sa',
+        name: 'آفاق الرياضة (تجريبي)',
+        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=DemoSport&backgroundColor=991b1b',
+        websiteUrl: 'https://example.com',
         displayOrder: 1,
       },
       {
-        name: 'طيران الرياض',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=RiyadhAir&backgroundColor=312e81',
-        websiteUrl: 'https://www.riyadhair.com',
+        name: 'مسارات النجوم (تجريبي)',
+        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=DemoRoutes&backgroundColor=312e81',
+        websiteUrl: 'https://example.com',
         displayOrder: 2,
       },
       {
-        name: 'مشاريع القدية',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=Qiddiya&backgroundColor=065f46',
-        websiteUrl: 'https://qiddiya.com',
+        name: 'ملاعب الغد (تجريبي)',
+        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=DemoFields&backgroundColor=065f46',
+        websiteUrl: 'https://example.com',
         displayOrder: 3,
       },
       {
-        name: 'رد بُل للطاقة',
-        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=RedBull&backgroundColor=1e3a8a',
-        websiteUrl: 'https://www.redbull.com',
+        name: 'طاقة الفريق (تجريبي)',
+        logoUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=DemoEnergy&backgroundColor=1e3a8a',
+        websiteUrl: 'https://example.com',
         displayOrder: 4,
       },
     ];
