@@ -229,7 +229,7 @@ export async function completeTournament(tournamentId: string) {
     }
 
     // حماية البطولة النشطة الأساسية في نسخة العرض التجريبية
-    if (process.env.DEMO_MODE !== 'false' && existing.name === 'دوري نجوم الرياض 2026') {
+    if (process.env.DEMO_MODE === 'true' && process.env.DEMO_DATABASE === 'true' && existing.name === 'دوري نجوم الرياض 2026') {
       return {
         success: false,
         error: 'عفواً، هذه البطولة هي البطولة الحالية النشطة في نسخة العرض ومحمية من الإنهاء لتظل المباريات المباشرة وتصويت الجولة يعملان باستمرار. يمكنك تجربة إنشاء بطولة جديدة وإنهائها!',
@@ -272,7 +272,7 @@ export async function deleteTournament(tournamentId: string) {
 
     // حماية البطولات الأساسية في نسخة العرض التجريبية
     if (
-      process.env.DEMO_MODE !== 'false' &&
+      process.env.DEMO_MODE === 'true' && process.env.DEMO_DATABASE === 'true' &&
       (existing.name === 'دوري نجوم الرياض 2026' || existing.name === 'كأس نجوم الدوري 2025')
     ) {
       return {

@@ -1718,7 +1718,7 @@ export default function AdminClient({ username }: { username: string }) {
           {/* الإجراءات */}
           <div className="flex items-center gap-2.5">
             {/* زر استعادة بيانات العرض الأصلية */}
-            <button
+            {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && <button
               onClick={handleResetDemo}
               disabled={isResetting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50"
@@ -1727,7 +1727,7 @@ export default function AdminClient({ username }: { username: string }) {
               <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">إعادة ضبط الديمو</span>
               <span className="sm:hidden">إعادة ضبط</span>
-            </button>
+            </button>}
 
             <button
               onClick={() => {

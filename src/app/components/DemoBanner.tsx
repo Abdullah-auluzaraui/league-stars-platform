@@ -27,7 +27,7 @@ export default function DemoBanner() {
     pathname?.startsWith('/admin-login') ||
     isPreview ||
     isAdminAuth ||
-    process.env.NEXT_PUBLIC_DEMO_MODE === 'false'
+    process.env.NEXT_PUBLIC_DEMO_MODE !== 'true'
   ) {
     return null;
   }
@@ -142,7 +142,7 @@ export function HeaderDemoButton() {
     pathname?.startsWith('/admin-login') ||
     isPreview ||
     isAdminAuth ||
-    process.env.NEXT_PUBLIC_DEMO_MODE === 'false'
+    process.env.NEXT_PUBLIC_DEMO_MODE !== 'true'
   ) {
     return null;
   }

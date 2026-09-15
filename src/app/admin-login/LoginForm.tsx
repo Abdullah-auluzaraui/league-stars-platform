@@ -142,7 +142,7 @@ export default function LoginForm() {
         </form>
 
         {/* زر الدخول السريع في وضع الديمو */}
-        {process.env.NEXT_PUBLIC_DEMO_MODE !== 'false' && (
+        {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
           <div className="mt-5 pt-5 border-t border-white/10">
             <button
               type="button"
@@ -158,7 +158,7 @@ export default function LoginForm() {
               <span>دخول تجريبي فوري بنقرة واحدة (Demo Admin)</span>
             </button>
             <p className="text-[11px] text-white/50 text-center mt-2.5">
-              بيانات الدخول: المستخدم <code className="text-[#F0C040] font-mono bg-white/5 px-1.5 py-0.5 rounded">admin</code> | كلمة المرور <code className="text-[#F0C040] font-mono bg-white/5 px-1.5 py-0.5 rounded">Admin@2026</code>
+              بيانات الدخول: المستخدم <code className="text-[#F0C040] font-mono bg-white/5 px-1.5 py-0.5 rounded">demo-admin</code> | كلمة المرور <code className="text-[#F0C040] font-mono bg-white/5 px-1.5 py-0.5 rounded">demo123456</code>
             </p>
           </div>
         )}

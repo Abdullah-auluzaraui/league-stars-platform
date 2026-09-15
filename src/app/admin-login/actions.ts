@@ -1,5 +1,6 @@
 'use server';
 
+import { isDemoEnabled, DEMO_ADMIN_USERNAME } from '@/core/lib/demo';
 import { redirect } from 'next/navigation';
 import { compare } from 'bcryptjs';
 import { z } from 'zod';
@@ -34,6 +35,9 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   const { username, password } = result.data;
+  if (username === DEMO_ADMIN_USERNAME && !isDemoEnabled()) {
+    return { error: 'وضع الديمو معطّل' };
+  }
 
   try {
     // البحث عن المستخدم في قاعدة البيانات
@@ -68,8 +72,7 @@ export async function login(prevState: any, formData: FormData) {
     await setAuthCookie(token);
   } catch (error) {
     console.error('Login error:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return { error: `خطأ في الاتصال: ${errorMessage}` };
+    return { error: 'تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا' };
   }
 
   // التوجيه إلى لوحة التحكم بعد نجاح تسجيل الدخول
@@ -89,13 +92,13 @@ export async function logout() {
 
 // ─── الدخول السريع كمسؤول في وضع الديمو (Demo Login Server Action) ────────────
 export async function demoLogin() {
-  if (process.env.DEMO_MODE === 'false') {
+  if (!isDemoEnabled()) {
     return { error: 'وضع الديمو معطّل' };
   }
 
   try {
     const adminUser = await prisma.user.findFirst({
-      where: { role: 'admin' },
+      where: { username: DEMO_ADMIN_USERNAME, role: 'admin' },
     });
 
     if (!adminUser) {
@@ -111,8 +114,7 @@ export async function demoLogin() {
     await setAuthCookie(token);
   } catch (error) {
     console.error('Demo login error:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return { error: `فشل الدخول التجريبي: ${errorMessage}` };
+    return { error: 'تعذّر الدخول التجريبي، يرجى المحاولة لاحقًا' };
   }
 
   redirect('/admin');

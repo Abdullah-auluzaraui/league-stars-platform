@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
+import { prisma } from './prisma';
 import { ActionError } from './validation';
 
 let jwtSecretCache: Uint8Array | null = null;
@@ -7,11 +8,11 @@ let jwtSecretCache: Uint8Array | null = null;
 function getJwtSecret(): Uint8Array {
   if (jwtSecretCache) return jwtSecretCache;
   const secret = process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production' && !secret) {
-    throw new Error('FATAL: JWT_SECRET environment variable is missing in production!');
+  if (!secret || Buffer.byteLength(secret) < 32) {
+    throw new Error('JWT_SECRET must be configured with at least 32 bytes');
   }
   jwtSecretCache = new TextEncoder().encode(
-    secret ?? 'fallback-secret-change-in-production-league-stars'
+    secret
   );
   return jwtSecretCache;
 }
@@ -56,6 +57,10 @@ export async function verifyAdmin() {
   const payload = await verifyToken(token);
   if (!payload) {
     throw new ActionError('INVALID_TOKEN', 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مجدداً');
+  }
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  if (!user || user.role !== 'admin' || payload.role !== 'admin') {
+    throw new ActionError('UNAUTHORIZED', 'غير مصرح لك بالدخول');
   }
   return payload;
 }
