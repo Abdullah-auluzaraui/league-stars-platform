@@ -63,7 +63,7 @@ Prisma migrations alone do not protect Supabase's separate Data API. If enabled,
 
 ## Showcase and verification
 
-A verified live URL and screenshots have not been supplied. Add them after checking that the deployed dataset and captures contain synthetic data. `league-stars` is a clearer optional repository name; check deployment integrations before renaming.
+Run the isolated demo locally to explore the public match centre and admin CMS. The demo configuration and seed commands above create synthetic content for screenshots and portfolio presentations.
 
 ```bash
 npm run test:security
