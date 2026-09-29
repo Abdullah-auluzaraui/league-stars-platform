@@ -2,6 +2,22 @@
 
 An Arabic football tournament platform with a public match centre and an authenticated administration CMS. A full-stack portfolio project using Next.js, React, TypeScript, Prisma, and PostgreSQL.
 
+![League Stars — Home](docs/screenshots/home.png)
+
+## Screenshots
+
+<details>
+<summary>📸 Click to expand</summary>
+
+| Page | Preview |
+| :--- | :--- |
+| **Home** | ![Home](docs/screenshots/home.png) |
+| **Matches** | ![Matches](docs/screenshots/matches.png) |
+| **Standings** | ![Standings](docs/screenshots/standings.png) |
+| **Admin Login** | ![Admin Login](docs/screenshots/admin-login.png) |
+
+</details>
+
 ## Features
 
 - Group stages, knockout rounds, fixtures, results, qualification, and tournament archiving.
